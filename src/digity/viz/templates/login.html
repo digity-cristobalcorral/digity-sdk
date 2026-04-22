@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>digity — Sign in</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  background: #eef2f7;
+  color: #0f172a;
+  font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Card ── */
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border: 1px solid #dde3ef;
+  border-radius: 16px;
+  padding: 44px 44px 40px;
+  box-shadow:
+    0 1px 3px rgba(15,23,42,.06),
+    0 8px 32px rgba(15,23,42,.08);
+  margin: 24px;
+}
+
+/* ── Logo ── */
+.logo {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: center;
+}
+.logo img {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: #dde3ef;
+  margin-bottom: 28px;
+}
+
+.card-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+  letter-spacing: -.01em;
+}
+.card-sub {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* ── Fields ── */
+.field { margin-bottom: 18px; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 7px;
+}
+.field input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #c5cedd;
+  border-radius: 9px;
+  color: #0f172a;
+  padding: 12px 15px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.field input:focus {
+  border-color: #1d4ed8;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(29,78,216,.1);
+}
+.field input::placeholder { color: #94a3b8; }
+
+/* ── Button ── */
+.btn {
+  width: 100%;
+  padding: 13px;
+  margin-top: 6px;
+  background: #0f1e38;
+  border: none;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  cursor: pointer;
+  transition: background .15s, transform .12s;
+  box-shadow: 0 4px 14px rgba(15,30,56,.22);
+}
+.btn:hover  { background: #1a3260; }
+.btn:active { transform: scale(.985); }
+
+/* ── Error ── */
+.error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  color: #dc2626;
+  padding: 11px 15px;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #94a3b8;
+  letter-spacing: .03em;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="logo">
+    <img src="/chiros/static/images/Digity_blackFont.png" alt="digity">
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card-heading">Sign in</div>
+  <div class="card-sub">Enter your credentials to access the dashboard.</div>
+
+  {% if error %}
+  <div class="error">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    {{ error }}
+  </div>
+  {% endif %}
+
+  <form method="POST">
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username"
+             placeholder="Enter your username"
+             autocomplete="username" autofocus required>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password"
+             placeholder="••••••••"
+             autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn">Sign in</button>
+  </form>
+
+  <div class="footer">digity &copy; 2024 — All rights reserved</div>
+
+</div>
+
+</body>
+</html>

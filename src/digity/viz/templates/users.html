@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>digity — Users</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
+
+:root {
+  --bg:       #eef2f7; --surface:  #ffffff; --surface2: #f1f5f9;
+  --border:   #dde3ef; --border2:  #c5cedd;
+  --text:     #0f172a; --muted:    #94a3b8; --muted2:   #64748b;
+  --accent:   #1d4ed8; --green:    #16a34a; --red:      #dc2626;
+  --radius:   10px;
+  --mono: 'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+}
+
+body { background:var(--bg); color:var(--text);
+  font-family:'Inter',-apple-system,'Segoe UI',sans-serif;
+  font-size:15px; display:flex; flex-direction:column;
+  -webkit-font-smoothing:antialiased; }
+
+/* ── Topbar ── */
+.topbar { display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; height:72px; border-bottom:1px solid rgba(255,255,255,.07);
+  background:#0f1e38;
+  flex-shrink:0; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+.topbar-left  { display:flex; align-items:center; gap:32px; }
+.topbar-right { display:flex; align-items:center; gap:14px; }
+.brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+.nav { display:flex; gap:4px; }
+.nav-link { color:rgba(255,255,255,.55); text-decoration:none; font-size:15px; font-weight:600;
+  padding:8px 18px; border-radius:8px; transition:all .15s; letter-spacing:.01em; }
+.nav-link:hover  { color:#fff; background:rgba(255,255,255,.08); }
+.nav-link.active { color:#fff; background:rgba(255,255,255,.12); }
+.sys-clock { font-family:var(--mono); font-size:14px; color:rgba(255,255,255,.4); letter-spacing:.06em; font-weight:600; }
+
+/* ── Layout ── */
+.content { padding:40px; max-width:860px; width:100%;
+  display:flex; flex-direction:column; gap:20px; }
+
+/* ── Card ── */
+.card { background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden; }
+.card-header { padding:18px 24px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; }
+.card-title { font-size:12px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted2); }
+.card-body { padding:24px; }
+
+/* ── Users table ── */
+.users-table { width:100%; border-collapse:collapse; }
+.users-table th { font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted); padding:0 0 14px;
+  text-align:left; border-bottom:1px solid var(--border); }
+.users-table th:last-child { text-align:right; }
+.users-table td { padding:16px 0; border-bottom:1px solid var(--border);
+  font-size:14px; vertical-align:middle; }
+.users-table tr:last-child td { border-bottom:none; }
+.users-table td:last-child { text-align:right; }
+
+.user-name { font-weight:600; color:var(--text); }
+.user-date { font-size:12px; color:var(--muted2); font-family:var(--mono); }
+.you-badge { font-size:11px; font-weight:700; background:rgba(29,78,216,.1);
+  color:var(--accent); border:1px solid rgba(29,78,216,.2);
+  border-radius:4px; padding:2px 7px; margin-left:8px; letter-spacing:.04em; }
+
+.action-row { display:flex; justify-content:flex-end; gap:8px; }
+
+/* ── Buttons ── */
+.btn-primary { background:var(--accent); color:#fff; border:none;
+  border-radius:8px; font-size:13px; font-weight:700; padding:9px 18px;
+  cursor:pointer; transition:opacity .15s; letter-spacing:.02em; }
+.btn-primary:hover { opacity:.85; }
+.btn-ghost { background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text); font-size:13px; font-weight:600;
+  padding:9px 16px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.btn-ghost:hover { border-color:var(--muted2); }
+.btn-danger { background:transparent; border:1px solid rgba(248,113,113,.3);
+  border-radius:8px; color:var(--red); font-size:13px; font-weight:600;
+  padding:9px 16px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.btn-danger:hover { background:rgba(248,113,113,.06); border-color:var(--red); }
+
+/* ── Add user form ── */
+.add-form { display:none; margin-top:20px; padding-top:20px;
+  border-top:1px solid var(--border); }
+.add-form.open { display:block; }
+.form-row { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+.field { display:flex; flex-direction:column; gap:7px; }
+.field label { font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted2); }
+.field input { background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text); padding:11px 14px; font-size:14px;
+  font-family:inherit; outline:none; transition:border-color .15s, box-shadow .15s; }
+.field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(29,78,216,.1); }
+.field input::placeholder { color:var(--muted); }
+
+/* ── Password inline form ── */
+.pw-form { display:none; margin-top:10px; }
+.pw-form.open { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+.pw-form input { background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text); padding:9px 13px; font-size:13px;
+  font-family:inherit; outline:none; width:200px;
+  transition:border-color .15s; }
+.pw-form input:focus { border-color:var(--accent); }
+
+/* ── Feedback ── */
+.feedback { font-size:13px; color:var(--green); font-weight:600;
+  opacity:0; transition:opacity .3s; }
+.feedback.visible { opacity:1; }
+.feedback.error { color:var(--red); }
+
+/* ── Empty state ── */
+.empty { text-align:center; padding:40px 0; color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a class="brand" href="/chiros/">
+      <img src="/chiros/static/images/Digity_whiteFont.png" alt="digity" style="height:28px;width:auto">
+    </a>
+    <nav class="nav">
+      <a class="nav-link" href="/chiros/">Viewer</a>
+      <a class="nav-link" href="/chiros/record">Record</a>
+      <a class="nav-link" href="/chiros/setup">Setup</a>
+      {% if not is_local %}<a class="nav-link active" href="/chiros/users">Users</a>{% endif %}
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <span class="sys-clock" id="clock">--:--:--</span>
+    <span style="font-size:13px;color:rgba(255,255,255,.55);padding:0 4px">{{ username }}</span>
+    <a href="/chiros/logout" style="font-size:13px;font-weight:600;color:rgba(255,255,255,.55);text-decoration:none;padding:6px 14px;border:1px solid rgba(255,255,255,.2);border-radius:7px;transition:all .15s" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.color='rgba(255,255,255,.55)';this.style.background=''">Logout</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">User Accounts</span>
+      <button class="btn-primary" onclick="toggleAddForm()">+ New User</button>
+    </div>
+    <div class="card-body">
+
+      <!-- Add user form -->
+      <div class="add-form" id="add-form">
+        <div class="form-row">
+          <div class="field">
+            <label>Username</label>
+            <input id="new-username" type="text" placeholder="username" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input id="new-password" type="password" placeholder="••••••••">
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <button class="btn-primary" onclick="createUser()">Create</button>
+            <button class="btn-ghost" onclick="toggleAddForm()">Cancel</button>
+          </div>
+        </div>
+        <span class="feedback" id="add-feedback"></span>
+      </div>
+
+      <!-- Users table -->
+      <table class="users-table" id="users-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-body">
+          <tr><td colspan="3" class="empty">Loading…</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Current user id (from server) ─────────────────────────────────────────────
+let currentUserId = null;
+
+// ── Load users ────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const r = await fetch('/chiros/api/users');
+  if (r.status === 401) { location.href = '/chiros/login'; return; }
+  const users = await r.json();
+  // Detect current user by checking who has the same username as the page header
+  const meEl = document.querySelector('.topbar-right span');
+  const meUsername = meEl ? meEl.textContent.trim() : '';
+
+  const tbody = document.getElementById('users-body');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">No users found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const isMe = u.username === meUsername;
+    if (isMe) currentUserId = u.id;
+    return `
+    <tr id="row-${u.id}">
+      <td>
+        <span class="user-name">${esc(u.username)}</span>
+        ${isMe ? '<span class="you-badge">YOU</span>' : ''}
+      </td>
+      <td><span class="user-date">${fmtDate(u.created_at)}</span></td>
+      <td>
+        <div class="action-row">
+          <button class="btn-ghost" onclick="togglePwForm(${u.id})">Change Password</button>
+          ${!isMe ? `<button class="btn-danger" onclick="deleteUser(${u.id}, '${esc(u.username)}')">Delete</button>` : ''}
+        </div>
+        <div class="pw-form" id="pw-${u.id}">
+          <input type="password" id="pw-input-${u.id}" placeholder="New password">
+          <button class="btn-primary" onclick="savePassword(${u.id})">Save</button>
+          <button class="btn-ghost" onclick="togglePwForm(${u.id})">Cancel</button>
+          <span class="feedback" id="pw-fb-${u.id}"></span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Add user form ─────────────────────────────────────────────────────────────
+function toggleAddForm() {
+  const f = document.getElementById('add-form');
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) {
+    document.getElementById('new-username').focus();
+    document.getElementById('add-feedback').className = 'feedback';
+  }
+}
+
+async function createUser() {
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value;
+  const fb = document.getElementById('add-feedback');
+  if (!username || !password) {
+    showFeedback(fb, 'Username and password are required', true); return;
+  }
+  const r = await fetch('/chiros/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  const d = await r.json();
+  if (!d.ok) { showFeedback(fb, d.error, true); return; }
+  document.getElementById('new-username').value = '';
+  document.getElementById('new-password').value = '';
+  document.getElementById('add-form').classList.remove('open');
+  loadUsers();
+}
+
+// ── Delete user ───────────────────────────────────────────────────────────────
+async function deleteUser(id, name) {
+  if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+  const r = await fetch(`/chiros/api/users/${id}`, { method: 'DELETE' });
+  const d = await r.json();
+  if (!d.ok) { alert(d.error); return; }
+  document.getElementById(`row-${id}`)?.remove();
+}
+
+// ── Change password ───────────────────────────────────────────────────────────
+function togglePwForm(id) {
+  document.querySelectorAll('.pw-form').forEach(el => {
+    if (el.id !== `pw-${id}`) el.classList.remove('open');
+  });
+  const f = document.getElementById(`pw-${id}`);
+  f.classList.toggle('open');
+  if (f.classList.contains('open')) document.getElementById(`pw-input-${id}`).focus();
+}
+
+async function savePassword(id) {
+  const input = document.getElementById(`pw-input-${id}`);
+  const fb    = document.getElementById(`pw-fb-${id}`);
+  const pw    = input.value;
+  if (!pw) { showFeedback(fb, 'Enter a new password', true); return; }
+  const r = await fetch(`/chiros/api/users/${id}/password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw }),
+  });
+  const d = await r.json();
+  if (!d.ok) { showFeedback(fb, d.error, true); return; }
+  input.value = '';
+  showFeedback(fb, 'Password updated', false);
+  setTimeout(() => document.getElementById(`pw-${id}`)?.classList.remove('open'), 1400);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showFeedback(el, msg, isError) {
+  el.textContent = msg;
+  el.className = 'feedback visible' + (isError ? ' error' : '');
+  if (!isError) setTimeout(() => { el.className = 'feedback'; }, 2500);
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(s) {
+  if (!s) return '—';
+  return s.replace('T', ' ').slice(0, 16);
+}
+
+loadUsers();
+</script>
+</body>
+</html>

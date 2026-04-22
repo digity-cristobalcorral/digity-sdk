@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>digity viz — Viewer</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+:root {
+  --bg:      #eef2f7; --surface: #ffffff; --surface2: #f1f5f9;
+  --border:  #dde3ef; --border2: #c5cedd;
+  --text:    #0f172a; --muted:   #94a3b8; --muted2:  #64748b;
+  --accent:  #1d4ed8; --green:   #16a34a; --red:     #dc2626;
+  --yellow:  #d97706; --radius:  9px;
+  --mono: 'JetBrains Mono','Fira Code',monospace;
+}
+body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,'Segoe UI',sans-serif;
+  font-size:14px; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
+
+/* ── Topbar ── */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:0 28px;
+  height:72px; background:#0f1e38;
+  border-bottom:1px solid rgba(255,255,255,.07); flex-shrink:0;
+  box-shadow:0 2px 12px rgba(0,0,0,.2); }
+.topbar-left  { display:flex; align-items:center; gap:32px; }
+.topbar-right { display:flex; align-items:center; gap:14px; }
+.brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+.nav { display:flex; gap:4px; }
+.nav-link { color:rgba(255,255,255,.55); text-decoration:none; font-size:15px; font-weight:600;
+  padding:8px 18px; border-radius:8px; transition:all .15s; letter-spacing:.01em; }
+.nav-link:hover  { color:#fff; background:rgba(255,255,255,.08); }
+.nav-link.active { color:#fff; background:rgba(255,255,255,.12); }
+.sys-clock { font-family:var(--mono); font-size:14px; color:rgba(255,255,255,.4); letter-spacing:.06em; font-weight:600; }
+.chip { padding:6px 14px; border-radius:6px; font-size:13px; font-family:monospace; font-weight:700;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:rgba(255,255,255,.6);
+  letter-spacing:.03em; }
+.chip.green { color:#4ade80; border-color:rgba(74,222,128,.3); background:rgba(74,222,128,.1); }
+.chip.red   { color:#f87171; border-color:rgba(248,113,113,.3); background:rgba(248,113,113,.1); }
+.rec-live { display:none; align-items:center; gap:8px; padding:6px 14px;
+  border-radius:6px; font-size:13px; font-weight:700; letter-spacing:.08em;
+  background:rgba(251,113,133,.1); border:1px solid rgba(251,113,133,.3); color:#fb7185; }
+.rec-live.visible { display:flex; }
+.rec-live-dot { width:6px; height:6px; border-radius:50%; background:#fb7185;
+  animation:blink 1.2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+/* ── Layout ── */
+.layout { display:flex; flex:1; min-height:0; }
+.sidebar { width:360px; min-width:360px; background:#0e1d35; border-right:1px solid rgba(255,255,255,.08);
+  overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.sidebar::-webkit-scrollbar { width:5px; }
+.sidebar::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:3px; }
+.card { background:#152540; border:1px solid rgba(255,255,255,.09); border-radius:var(--radius); padding:16px 18px; }
+.card-title { font-size:12px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:rgba(255,255,255,.45); margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; }
+
+/* ── Finger cards ── */
+.finger-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.25);
+  transition:background .3s, box-shadow .3s; flex-shrink:0; }
+.finger-dot.live { background:#4ade80; box-shadow:0 0 8px rgba(74,222,128,.6); }
+.angle-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.angle-row:last-child { margin-bottom:0; }
+.angle-label { font-size:14px; color:rgba(255,255,255,.5); width:40px; flex-shrink:0; font-weight:600; }
+.angle-bar-bg { flex:1; height:10px; background:rgba(255,255,255,.1); border-radius:5px; overflow:hidden; }
+.angle-bar { height:100%; background:linear-gradient(90deg,#38bdf8,#818cf8);
+  border-radius:5px; width:0%; transition:width .08s; }
+.angle-val { font-size:14px; color:#e2e8f0; width:46px; text-align:right;
+  font-family:'JetBrains Mono',monospace; font-weight:700; }
+
+/* ── Touch grid ── */
+.touch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.touch-cell { height:56px; border-radius:6px; background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.09); position:relative; overflow:hidden; }
+.touch-fill { position:absolute; bottom:0; left:0; right:0;
+  background:linear-gradient(180deg,rgba(56,189,248,.7),rgba(56,189,248,.2));
+  transition:height .08s; height:0%; }
+.touch-label { position:absolute; bottom:6px; left:0; right:0; text-align:center;
+  font-size:13px; color:rgba(255,255,255,.5); font-weight:700; }
+
+/* ── IMU ── */
+.imu-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.imu-row:last-child { margin-bottom:0; }
+.imu-label { color:rgba(255,255,255,.5); font-size:14px; font-weight:600; }
+.imu-val   { font-size:14px; font-family:'JetBrains Mono',monospace; color:#e2e8f0; font-weight:700; }
+
+/* ── Side tabs ── */
+.side-tabs { display:flex; gap:6px; margin-bottom:4px; }
+.side-tab { flex:1; padding:10px 0; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--radius); color:rgba(255,255,255,.5); font-size:14px; font-weight:700;
+  letter-spacing:.04em; cursor:pointer; transition:color .15s,border-color .15s,background .15s; }
+.side-tab.active { color:#7dd3fc; border-color:rgba(125,211,252,.35); background:rgba(56,189,248,.12); }
+
+/* ── Canvas ── */
+.canvas-wrapper { flex:1; position:relative; overflow:hidden; background:#0a0e18; }
+#canvas { display:block; width:100%; height:100%; outline:none; }
+.hint { position:absolute; bottom:14px; right:16px; font-size:11px; color:rgba(255,255,255,.3);
+  pointer-events:none; letter-spacing:.02em; }
+#loading-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; background:#0a0e18; color:rgba(255,255,255,.45); font-size:13px; gap:12px;
+  z-index:10; transition:opacity .4s; }
+#loading-overlay.hidden { opacity:0; pointer-events:none; }
+.spinner { width:32px; height:32px; border:2px solid rgba(255,255,255,.15); border-top-color:#38bdf8;
+  border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── Joint control panel ── */
+.jog-btn { padding:8px 18px; border-radius:8px; border:1px solid var(--border); background:var(--surface2);
+  color:var(--muted2); font-size:14px; font-weight:600; cursor:pointer; transition:all .15s; letter-spacing:.02em; }
+.jog-btn:hover { color:var(--text); border-color:var(--accent); }
+.jog-btn.active { color:var(--accent); border-color:var(--accent); background:rgba(29,78,216,.08); }
+.topbar .jog-btn { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.65); }
+.topbar .jog-btn:hover { background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.3); color:#fff; }
+
+#jog-panel { position:absolute; top:0; right:0; bottom:0; width:300px; background:#0e1d35;
+  border-left:1px solid rgba(255,255,255,.08); overflow-y:auto; padding:16px 14px;
+  display:none; flex-direction:column; gap:10px; z-index:5; }
+#jog-panel.open { display:flex; }
+#jog-panel::-webkit-scrollbar { width:5px; }
+#jog-panel::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:3px; }
+
+.jog-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.jog-title { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#7dd3fc; }
+.jog-reset { font-size:12px; color:rgba(255,255,255,.45); background:none; border:1px solid rgba(255,255,255,.15);
+  border-radius:5px; padding:4px 10px; cursor:pointer; }
+.jog-reset:hover { color:#fff; border-color:rgba(255,255,255,.35); }
+
+.jog-finger { background:#152540; border:1px solid rgba(255,255,255,.09); border-radius:var(--radius); padding:12px 14px; }
+.jog-finger-name { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:rgba(255,255,255,.45); margin-bottom:10px; }
+.jog-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.jog-row:last-child { margin-bottom:0; }
+.jog-lbl { font-size:12px; color:rgba(255,255,255,.45); width:36px; flex-shrink:0; font-weight:500; }
+.jog-slider { flex:1; height:4px; accent-color:#38bdf8; cursor:pointer; }
+.jog-num { font-size:12px; font-family:'JetBrains Mono',monospace; color:#e2e8f0;
+  width:34px; text-align:right; font-weight:600; }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a class="brand" href="/chiros/">
+      <img src="/chiros/static/images/Digity_whiteFont.png" alt="digity" style="height:28px;width:auto">
+    </a>
+    <nav class="nav">
+      <a class="nav-link active" href="/chiros/">Viewer</a>
+      <a class="nav-link" href="/chiros/record">Record</a>
+      <a class="nav-link" href="/chiros/setup">Setup</a>
+      {% if current_user.is_admin and not is_local %}<a class="nav-link" href="/chiros/users">Users</a>{% endif %}
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <span class="rec-live" id="rec-live"><span class="rec-live-dot"></span>REC</span>
+    <div style="display:flex;gap:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:2px">
+      <button class="jog-btn" id="model-ultraleap" onclick="setModel('ultraleap')" style="border:none;background:rgba(14,165,233,.18);color:#7dd3fc">Ultraleap</button>
+      <button class="jog-btn" id="model-shadow"    onclick="setModel('shadow')"    style="border:none">Shadow</button>
+    </div>
+    <button class="jog-btn" id="jog-toggle" onclick="toggleJog()">Joint Control</button>
+    <span class="chip" id="chip-fps">0 fps</span>
+    <span class="chip red" id="chip-signal">No Signal</span>
+    <span class="chip" id="chip-pkt">0 pkt/s</span>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="side-tabs">
+      <button class="side-tab active" id="tab-right" onclick="setActiveSide('right')">Right</button>
+      <button class="side-tab"        id="tab-left"  onclick="setActiveSide('left')">Left</button>
+    </div>
+    <div class="card"><div class="card-title">Touch</div><div class="touch-grid" id="touch-grid"></div></div>
+    <div class="card">
+      <div class="card-title">IMU</div>
+      <div class="imu-row"><span class="imu-label">Acc X</span><span class="imu-val" id="imu-ax">—</span></div>
+      <div class="imu-row"><span class="imu-label">Acc Y</span><span class="imu-val" id="imu-ay">—</span></div>
+      <div class="imu-row"><span class="imu-label">Acc Z</span><span class="imu-val" id="imu-az">—</span></div>
+      <div class="imu-row"><span class="imu-label">Gyr X</span><span class="imu-val" id="imu-gx">—</span></div>
+      <div class="imu-row"><span class="imu-label">Gyr Y</span><span class="imu-val" id="imu-gy">—</span></div>
+      <div class="imu-row"><span class="imu-label">Gyr Z</span><span class="imu-val" id="imu-gz">—</span></div>
+    </div>
+  </div>
+
+  <div class="canvas-wrapper">
+    <canvas id="canvas"></canvas>
+    <div id="loading-overlay"><div class="spinner"></div><span>Loading hand model…</span></div>
+    <div class="hint">drag to rotate · scroll to zoom</div>
+    <div id="jog-panel"></div>
+
+  </div>
+</div>
+
+<script src="/chiros/static/js/socket.io.min.js"></script>
+<script type="module">
+import * as THREE from '/chiros/static/js/three/three.module.js';
+import { OrbitControls }    from '/chiros/static/js/three/OrbitControls.patched.js';
+import { GLTFLoader }       from '/chiros/static/js/three/GLTFLoader.js';
+import { buildShadowHand }  from '/chiros/static/js/shadow_hand.js';
+
+// ── Sensor state ───────────────────────────────────────────────────────────────
+
+const FINGER_META = [
+  { idx:0, name:'Thumb',  labels:['Abd','Flex1','Flex2'] },
+  { idx:1, name:'Index',  labels:['MCP','PIP','DIP'] },
+  { idx:2, name:'Middle', labels:['MCP','PIP','DIP'] },
+  { idx:3, name:'Ring',   labels:['MCP','PIP','DIP'] },
+  { idx:4, name:'Pinky',  labels:['MCP','PIP','DIP'] },
+];
+
+function makeSideState() {
+  return {
+    fingers:{ 0:{angles:[0,0,0],ts:0}, 1:{angles:[0,0,0],ts:0},
+              2:{angles:[0,0,0],ts:0}, 3:{angles:[0,0,0],ts:0}, 4:{angles:[0,0,0],ts:0} },
+    touch:[0,0,0,0,0,0], imu:{acc:[0,0,0],gyro:[0,0,0]}, lastFrame:0, pktTotal:0,
+  };
+}
+const sensorState = { right: makeSideState(), left: makeSideState() };
+
+function makeTargetDeg() { return {0:[0,0,0,0,0],1:[0,0,0,0,0],2:[0,0,0,0,0],3:[0,0,0,0,0],4:[0,0,0,0,0]}; }
+const targetDeg  = { right:makeTargetDeg(), left:makeTargetDeg() };
+const currentDeg = { right:makeTargetDeg(), left:makeTargetDeg() };
+
+// ── Sidebar ────────────────────────────────────────────────────────────────────
+
+let activeSide = 'right';
+window.setActiveSide = function(side) {
+  activeSide = side;
+  document.getElementById('tab-right').className = 'side-tab'+(side==='right'?' active':'');
+  document.getElementById('tab-left').className  = 'side-tab'+(side==='left'?' active':'');
+};
+
+const sidebar  = document.getElementById('sidebar');
+const uiFinger = {};
+for (const fm of FINGER_META) {
+  const card=document.createElement('div'); card.className='card';
+  const title=document.createElement('div'); title.className='card-title';
+  title.innerHTML=`${fm.name} <span class="finger-dot" id="dot-${fm.idx}"></span>`;
+  card.appendChild(title);
+  const bars=[],vals=[];
+  for (let s=0;s<3;s++){
+    const row=document.createElement('div'); row.className='angle-row';
+    const lbl=document.createElement('span'); lbl.className='angle-label'; lbl.textContent=fm.labels[s];
+    const bg=document.createElement('div'); bg.className='angle-bar-bg';
+    const bar=document.createElement('div'); bar.className='angle-bar'; bg.appendChild(bar);
+    const val=document.createElement('span'); val.className='angle-val'; val.textContent='0°';
+    row.append(lbl,bg,val); card.appendChild(row); bars.push(bar); vals.push(val);
+  }
+  sidebar.insertBefore(card,document.getElementById('touch-grid').closest('.card'));
+  uiFinger[fm.idx]={dot:title.querySelector('.finger-dot'),bars,vals};
+}
+const touchFills=[];
+for (let i=0;i<6;i++){
+  const cell=document.createElement('div'); cell.className='touch-cell';
+  const fill=document.createElement('div'); fill.className='touch-fill';
+  const lbl=document.createElement('span'); lbl.className='touch-label'; lbl.textContent=String(i);
+  cell.append(fill,lbl); document.getElementById('touch-grid').appendChild(cell); touchFills.push(fill);
+}
+
+// ── Three.js ───────────────────────────────────────────────────────────────────
+
+const canvas  = document.getElementById('canvas');
+const wrapper = canvas.parentElement;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07090e);
+scene.fog = new THREE.FogExp2(0x07090e, 0.018);
+
+const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 50);
+camera.position.set(0, 0.08, 0.82);
+
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0, 0);
+controls.enableDamping = true; controls.dampingFactor = 0.07;
+controls.minDistance = 0.3; controls.maxDistance = 3.0;
+
+function resize(){
+  const w=wrapper.clientWidth, h=wrapper.clientHeight;
+  renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+resize(); window.addEventListener('resize', resize);
+
+// Lighting — warm skin-friendly setup
+scene.add(new THREE.AmbientLight(0xffe8d0, 0.8));
+
+const key = new THREE.DirectionalLight(0xfff4e0, 3.5);
+key.position.set(0.4, 1.0, 0.6);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.near = 0.01; key.shadow.camera.far = 4;
+key.shadow.camera.left = key.shadow.camera.bottom = -0.5;
+key.shadow.camera.right = key.shadow.camera.top   =  0.5;
+scene.add(key);
+
+const fill1 = new THREE.DirectionalLight(0x88aaff, 0.9);
+fill1.position.set(-0.5, 0.3, -0.3);
+scene.add(fill1);
+const fill2 = new THREE.DirectionalLight(0xffcc99, 0.4);
+fill2.position.set(0.0, -0.5, 0.5);
+scene.add(fill2);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(6,6),
+  new THREE.MeshStandardMaterial({ color:0x060a10, roughness:1 })
+);
+ground.rotation.x = -Math.PI/2; ground.position.y = -0.22; ground.receiveShadow = true;
+scene.add(ground);
+const grid = new THREE.GridHelper(1.4, 18, 0x111a28, 0x0b1320);
+grid.position.y = -0.219; scene.add(grid);
+
+// ── Retargeting map — Ultraleap GenericHand bone names ────────────────────────
+//
+//  Thumb:   meta → abduction,  a → MCP flex,  b → IP flex
+//  Fingers: a → MCP flex (knuckle),  b → PIP,  c → DIP
+//  Meta bones for fingers 1-4 are kept at rest pose (no sensor input).
+//
+const RETARGET = {
+  0: ['thumb_meta', 'thumb_a', 'thumb_b'],  // thumb: abd=meta, MCP=a, IP=b
+  1: ['index_a',  'index_b',  'index_c'],   // MCP=a, PIP=b, DIP=c
+  2: ['middle_a', 'middle_b', 'middle_c'],
+  3: ['ring_a',   'ring_b',   'ring_c'],
+  4: ['pinky_a',  'pinky_b',  'pinky_c'],
+};
+
+// Flexion axis in the Ultraleap model local bone space.
+// Bones extend along local X (translations are along X in parent space).
+// Curl axis is Z; positive = flex toward palm for this model.
+const FLEX_AXIS = new THREE.Vector3(0, 0, 1);
+const FLEX_SIGN = 1;
+const THUMB_ABD_AXIS = new THREE.Vector3(0, 1, 0);
+const THUMB_ABD_SIGN = 1;
+
+const DEG2RAD = Math.PI / 180;
+const LERP    = 0.14;
+
+// ── Active model ──────────────────────────────────────────────────────────────
+let activeModel = 'ultraleap'; // 'ultraleap' | 'shadow'
+
+// Shadow Hand retargeting: sensor finger idx → Shadow joint names (in order)
+// fi=0 thumb: abd→THJ5, MCP→THJ2, IP→THJ1
+// fi=1..4 fingers: MCP→xFJ3, PIP→xFJ2, DIP→xFJ1
+const SHADOW_RETARGET = {
+  0: ['THJ4', 'THJ2', 'THJ1'],  // ABD→THJ4 (true abduction joint), MCP→THJ2, IP→THJ1
+  1: ['FFJ3', 'FFJ2', 'FFJ1'],
+  2: ['MFJ3', 'MFJ2', 'MFJ1'],
+  3: ['RFJ3', 'RFJ2', 'RFJ1'],
+  4: ['LFJ3', 'LFJ2', 'LFJ1'],
+};
+
+const shadowHands = { right: null, left: null };
+let shadowReady = false;
+
+// ── Load hand model ───────────────────────────────────────────────────────────
+
+// handInfo[side] = { bones: {name→Object3D}, restQuats: {name→Quaternion} }
+const handInfo = { right: null, left: null };
+
+const loader = new GLTFLoader();
+
+function loadHand(side) {
+  return new Promise((resolve, reject) => {
+    loader.load('/chiros/static/models/ultraleap_hand_flat.glb', (gltf) => {
+      const root = gltf.scene;
+
+      // The GLB contains a LEFT hand; mirror for right hand
+      const isRight = (side === 'right');
+
+      root.traverse((obj) => {
+        if (obj.isMesh || obj.isSkinnedMesh) {
+          obj.castShadow    = true;
+          obj.receiveShadow = true;
+          if (obj.isSkinnedMesh) {
+            // Replace material with warm skin-tone PBR
+            obj.material = new THREE.MeshPhysicalMaterial({
+              color:      0xd4956a,
+              roughness:  0.78,
+              metalness:  0.0,
+              sheen:      0.35,
+              sheenColor: new THREE.Color(0xff9966),
+              clearcoat:  0.06,
+              clearcoatRoughness: 0.4,
+            });
+            obj.frustumCulled = false;
+          }
+        }
+      });
+
+      // The Ultraleap model is in centimetres; scale to scene units (~0.012 → ~20cm hand)
+      const HAND_SCALE = 0.012;
+      root.scale.set(HAND_SCALE, HAND_SCALE, HAND_SCALE);
+
+      // Rotate model to face camera (the Ultraleap model is in T-pose facing +Z)
+      root.rotation.set(0, Math.PI, 0);
+
+      const wrapper = new THREE.Group();
+      wrapper._isUltraleapHand = true;
+      wrapper.add(root);
+
+      if (isRight) {
+        // Mirror on X to turn left hand into right hand
+        wrapper.scale.x = -1;
+        wrapper.position.set(0.28, 0, 0);
+      } else {
+        wrapper.position.set(-0.28, 0, 0);
+      }
+
+      scene.add(wrapper);
+
+      // Collect bones and store rest quaternions
+      // Enable matrixAutoUpdate so quaternion changes take effect each frame
+      const bones     = {};
+      const restQuats = {};
+      root.traverse((obj) => {
+        if (obj.name) {
+          obj.matrixAutoUpdate = true;
+          bones[obj.name] = obj;
+          restQuats[obj.name] = obj.quaternion.clone();
+        }
+      });
+      console.log(`[${side}] bones found:`, Object.keys(bones).join(', '));
+
+      handInfo[side] = { bones, restQuats };
+      resolve();
+    }, undefined, reject);
+  });
+}
+
+const loadingOverlay = document.getElementById('loading-overlay');
+let handsReady = false;
+
+Promise.all([loadHand('right'), loadHand('left')])
+  .then(() => {
+    handsReady = true;
+    loadingOverlay.classList.add('hidden');
+    setTimeout(() => loadingOverlay.remove(), 500);
+  })
+  .catch((err) => {
+    console.error('Model load error:', err);
+    const msg = loadingOverlay.querySelector('span');
+    msg.style.color = '#f43f5e';
+    msg.textContent = 'Error: ' + (err?.message || String(err));
+    loadingOverlay.querySelector('.spinner').style.display = 'none';
+  });
+
+// Shadow hands load on demand when first selected
+async function loadShadowHands() {
+  if (shadowReady) return;
+  try {
+    const [sh_r, sh_l] = await Promise.all([
+      buildShadowHand(loader, true),
+      buildShadowHand(loader, false),
+    ]);
+    shadowHands.right = sh_r;
+    shadowHands.left  = sh_l;
+    scene.add(sh_r.root);
+    scene.add(sh_l.root);
+    sh_r.root.visible = false;
+    sh_l.root.visible = false;
+    shadowReady = true;
+    console.log('[Shadow] loaded');
+  } catch(e) {
+    console.error('[Shadow] load error:', e);
+  }
+}
+
+// ── Model selector ────────────────────────────────────────────────────────────
+window.setModel = async function(model) {
+  if (model === activeModel) return;
+  activeModel = model;
+
+  document.getElementById('model-ultraleap').style.background =
+    model === 'ultraleap' ? 'rgba(14,165,233,.12)' : '';
+  document.getElementById('model-ultraleap').style.color =
+    model === 'ultraleap' ? 'var(--accent)' : '';
+  document.getElementById('model-shadow').style.background =
+    model === 'shadow' ? 'rgba(14,165,233,.12)' : '';
+  document.getElementById('model-shadow').style.color =
+    model === 'shadow' ? 'var(--accent)' : '';
+
+  if (model === 'shadow') {
+    // Hide Ultraleap wrappers (they are children of scene root)
+    scene.children.forEach(c => {
+      if (c._isUltraleapHand) c.visible = false;
+    });
+    await loadShadowHands();
+    if (shadowHands.right) shadowHands.right.root.visible = true;
+    if (shadowHands.left)  shadowHands.left.root.visible  = true;
+  } else {
+    scene.children.forEach(c => {
+      if (c._isUltraleapHand) c.visible = true;
+    });
+    if (shadowHands.right) shadowHands.right.root.visible = false;
+    if (shadowHands.left)  shadowHands.left.root.visible  = false;
+  }
+};
+
+// ── Retargeting: apply sensor angles to bones ─────────────────────────────────
+
+const _flexQ = new THREE.Quaternion();
+const _abdQ  = new THREE.Quaternion();
+
+function applyRetarget() {
+  if (!handsReady) return;
+
+  for (const side of ['right', 'left']) {
+    const hi   = handInfo[side];
+    if (!hi) continue;
+    const cdeg = currentDeg[side];
+    const tdeg = targetDeg[side];
+    const isRight = (side === 'right');
+
+    for (let fi = 0; fi <= 4; fi++) {
+      const boneNames = RETARGET[fi];
+
+      // Smooth lerp toward sensor targets, clamped to Chiros limits
+      const limRow = JOINT_LIMITS[fi];
+      for (let j = 0; j < 5; j++) {
+        const lim = limRow && limRow[j];
+        const target = lim
+          ? Math.max(lim[0], Math.min(lim[1], tdeg[fi][j] || 0))
+          : (tdeg[fi][j] || 0);
+        cdeg[fi][j] += (target - cdeg[fi][j]) * LERP;
+      }
+
+      for (let seg = 0; seg < boneNames.length; seg++) {
+        const bone = hi.bones[boneNames[seg]];
+        if (!bone) continue;
+        const rest = hi.restQuats[boneNames[seg]];
+
+        if (fi === 0 && seg === 0) {
+          const abd = cdeg[fi][0] * DEG2RAD * THUMB_ABD_SIGN;
+          _abdQ.setFromAxisAngle(THUMB_ABD_AXIS, abd);
+          bone.quaternion.copy(rest).multiply(_abdQ);
+        } else {
+          const flex = (cdeg[fi][seg] || 0) * DEG2RAD * FLEX_SIGN;
+          _flexQ.setFromAxisAngle(FLEX_AXIS, flex);
+          bone.quaternion.copy(rest).multiply(_flexQ);
+        }
+      }
+    }
+  }
+}
+
+// ── Shadow Hand retargeting ───────────────────────────────────────────────────
+function applyRetargetShadow() {
+  if (!shadowReady) return;
+  for (const side of ['right', 'left']) {
+    const sh   = shadowHands[side];
+    if (!sh) continue;
+    const cdeg = currentDeg[side];
+    const tdeg = targetDeg[side];
+
+    // Lerp toward targets (shared with Ultraleap)
+    for (let fi = 0; fi <= 4; fi++)
+      for (let j = 0; j < 5; j++)
+        cdeg[fi][j] += ((tdeg[fi][j] || 0) - cdeg[fi][j]) * LERP;
+
+    for (const [fi, jointNames] of Object.entries(SHADOW_RETARGET)) {
+      const fidx = parseInt(fi);
+      for (let j = 0; j < jointNames.length; j++) {
+        sh.setJoint(jointNames[j], (cdeg[fidx][j] || 0) * DEG2RAD);
+      }
+    }
+  }
+}
+
+// ── Sidebar UI ─────────────────────────────────────────────────────────────────
+
+let pktSnapshot=0, pktSnapshotTime=Date.now();
+
+// ── No-agent banner logic ──────────────────────────────────────────────────────
+function _updateBanner() {}
+
+function updateUI() {
+  const now = Date.now();
+  const st  = sensorState[activeSide];
+
+  const anyLive = (now-sensorState.right.lastFrame)<2000 || (now-sensorState.left.lastFrame)<2000;
+  _updateBanner(anyLive);
+  const chipSig = document.getElementById('chip-signal');
+  chipSig.textContent = anyLive ? 'Live' : 'No Signal';
+  chipSig.className   = 'chip '+(anyLive ? 'green' : 'red');
+
+  if (now-pktSnapshotTime>=1000) {
+    const total=sensorState.right.pktTotal+sensorState.left.pktTotal;
+    document.getElementById('chip-pkt').textContent=(total-pktSnapshot)+' pkt/s';
+    pktSnapshot=total; pktSnapshotTime=now;
+  }
+
+  for (const [idxStr,fc] of Object.entries(uiFinger)) {
+    const fi=parseInt(idxStr), fs=st.fingers[fi];
+    const isLive=fs&&(now-fs.ts)<2000;
+    fc.dot.className='finger-dot'+(isLive?' live':'');
+    const angles=fs?.angles||[0,0,0];
+    for (let s=0;s<3;s++){
+      const a=angles[s]??0;
+      fc.bars[s].style.width=Math.max(0,Math.min(100,(a/90)*100))+'%';
+      fc.vals[s].textContent=a.toFixed(0)+'°';
+    }
+  }
+  for (let i=0;i<6;i++) touchFills[i].style.height=((st.touch[i]??0)*100).toFixed(0)+'%';
+  const {acc,gyro}=st.imu;
+  document.getElementById('imu-ax').textContent=acc[0]?.toFixed(0)??'—';
+  document.getElementById('imu-ay').textContent=acc[1]?.toFixed(0)??'—';
+  document.getElementById('imu-az').textContent=acc[2]?.toFixed(0)??'—';
+  document.getElementById('imu-gx').textContent=gyro[0]?.toFixed(0)??'—';
+  document.getElementById('imu-gy').textContent=gyro[1]?.toFixed(0)??'—';
+  document.getElementById('imu-gz').textContent=gyro[2]?.toFixed(0)??'—';
+}
+
+// ── Render loop ────────────────────────────────────────────────────────────────
+
+let fpsFrames=0, fpsLast=0;
+function animate(t) {
+  requestAnimationFrame(animate);
+  controls.update();
+  if (activeModel === 'ultraleap') applyRetarget();
+  else applyRetargetShadow();
+  updateUI();
+  fpsFrames++;
+  if (t-fpsLast>=1000){
+    document.getElementById('chip-fps').textContent=fpsFrames+' fps';
+    fpsFrames=0; fpsLast=t;
+  }
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+
+// Press T to test — drives all fingers to 45° to verify the flex axis is correct
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 't' && e.key !== 'T') return;
+  for (const side of ['right','left']) {
+    const td = targetDeg[side];
+    for (let fi = 0; fi <= 4; fi++)
+      for (let j = 0; j < 5; j++)
+        td[fi][j] = 45;
+  }
+  console.log('Test pose: 45° on all joints');
+});
+
+// ── Joint Control Panel ───────────────────────────────────────────────────────
+
+let jogMode = false;
+
+// Joint limits — Chiros mechanism limits (PIP/DIP from spec) + anatomical MCP
+// T3=Thumb, F3=Index+Ring, F5=Middle, F2=Pinky
+const JOG_FINGERS = [
+  { idx:0, name:'Thumb',  joints:[{lbl:'Abd', min:0,  max:50},{lbl:'MCP', min:0,  max:60},{lbl:'IP',  min:10, max:80}] },
+  { idx:1, name:'Index',  joints:[{lbl:'MCP', min:0,  max:85},{lbl:'PIP', min:12, max:80},{lbl:'DIP', min:12, max:80}] },
+  { idx:2, name:'Middle', joints:[{lbl:'MCP', min:0,  max:85},{lbl:'PIP', min:12, max:80},{lbl:'DIP', min:12, max:80}] },
+  { idx:3, name:'Ring',   joints:[{lbl:'MCP', min:0,  max:85},{lbl:'PIP', min:12, max:80},{lbl:'DIP', min:12, max:80}] },
+  { idx:4, name:'Pinky',  joints:[{lbl:'MCP', min:0,  max:85},{lbl:'PIP', min:12, max:80},{lbl:'DIP', min:12, max:80}] },
+];
+
+// Same limits used to clamp incoming sensor data
+const JOINT_LIMITS = JOG_FINGERS.map(f => f.joints.map(j => [j.min, j.max]));
+
+// Build panel DOM once
+const jogPanel = document.getElementById('jog-panel');
+
+(function buildJogPanel() {
+  const header = document.createElement('div');
+  header.className = 'jog-header';
+  header.innerHTML = `<span class="jog-title">Joint Control</span>
+    <div style="display:flex;gap:4px">
+      <button class="jog-reset" id="jog-random-btn" onclick="jogRandom()">Random</button>
+      <button class="jog-reset" onclick="jogReset()">Reset</button>
+    </div>`;
+  jogPanel.appendChild(header);
+
+  for (const finger of JOG_FINGERS) {
+    const card = document.createElement('div');
+    card.className = 'jog-finger';
+    card.innerHTML = `<div class="jog-finger-name">${finger.name}</div>`;
+
+    for (let j = 0; j < finger.joints.length; j++) {
+      const jd = finger.joints[j];
+      const row = document.createElement('div');
+      row.className = 'jog-row';
+      const sliderId = `jog-${finger.idx}-${j}`;
+      row.innerHTML = `
+        <span class="jog-lbl">${jd.lbl}</span>
+        <input class="jog-slider" type="range" id="${sliderId}"
+          min="${jd.min}" max="${jd.max}" step="1" value="${jd.min}">
+        <span class="jog-num" id="${sliderId}-val">${jd.min}°</span>`;
+      card.appendChild(row);
+
+      // live update on input
+      row.querySelector('input').addEventListener('input', function() {
+        document.getElementById(sliderId+'-val').textContent = this.value + '°';
+        if (jogMode) {
+          targetDeg['right'][finger.idx][j] = +this.value;
+          targetDeg['left'] [finger.idx][j] = +this.value;
+        }
+      });
+    }
+    jogPanel.appendChild(card);
+  }
+})();
+
+window.jogReset = function() {
+  for (const finger of JOG_FINGERS) {
+    for (let j = 0; j < finger.joints.length; j++) {
+      const min = finger.joints[j].min;
+      const el = document.getElementById(`jog-${finger.idx}-${j}`);
+      if (el) { el.value = min; document.getElementById(`jog-${finger.idx}-${j}-val`).textContent = min+'°'; }
+      targetDeg['right'][finger.idx][j] = min;
+      targetDeg['left'] [finger.idx][j] = min;
+    }
+  }
+};
+
+// Random motion
+let randomInterval = null;
+
+function _applyRandomPose() {
+  for (const finger of JOG_FINGERS) {
+    for (let j = 0; j < finger.joints.length; j++) {
+      const {min, max} = finger.joints[j];
+      const val = Math.round(min + Math.random() * (max - min));
+      const el = document.getElementById(`jog-${finger.idx}-${j}`);
+      if (el) { el.value = val; document.getElementById(`jog-${finger.idx}-${j}-val`).textContent = val + '°'; }
+      targetDeg['right'][finger.idx][j] = val;
+      targetDeg['left'] [finger.idx][j] = val;
+    }
+  }
+}
+
+window.jogRandom = function() {
+  const btn = document.getElementById('jog-random-btn');
+  if (randomInterval) {
+    clearInterval(randomInterval);
+    randomInterval = null;
+    btn.textContent = 'Random';
+    btn.style.color = '';
+  } else {
+    _applyRandomPose();
+    randomInterval = setInterval(_applyRandomPose, 1200);
+    btn.textContent = 'Stop';
+    btn.style.color = 'var(--accent)';
+  }
+};
+
+window.toggleJog = function() {
+  jogMode = !jogMode;
+  jogPanel.classList.toggle('open', jogMode);
+  document.getElementById('jog-toggle').classList.toggle('active', jogMode);
+  if (!jogMode) {
+    if (randomInterval) { clearInterval(randomInterval); randomInterval = null;
+      const btn = document.getElementById('jog-random-btn');
+      if (btn) { btn.textContent = 'Random'; btn.style.color = ''; }
+    }
+    window.jogReset();
+  }
+};
+
+// ── Socket.IO ──────────────────────────────────────────────────────────────────
+
+const socket = io({ path: '/chiros/socket.io' });
+
+socket.on('recording_state', (d) => {
+  document.getElementById('rec-live').className = 'rec-live' + (d.recording ? ' visible' : '');
+});
+socket.on('hand_frame', (data) => {
+  if (!data || data.type!=='sensor_frame') return;
+  const frame=data.frame;
+  if (!frame||!Array.isArray(frame.sensors)) return;
+
+  const side=frame.side==='left'?'left':'right';
+  if (jogMode) return;
+  const st=sensorState[side], tdeg=targetDeg[side];
+  st.lastFrame=Date.now(); st.pktTotal++;
+
+  for (const sensor of frame.sensors) {
+    if (!sensor||typeof sensor.type!=='string') continue;
+    if (sensor.type==='angles') {
+      const fi=sensor.finger;
+      if (typeof fi!=='number'||fi<0||fi>4||!Array.isArray(sensor.samples)) continue;
+      const latest=sensor.samples[sensor.samples.length-1];
+      if (latest&&Array.isArray(latest.angles_deg)){
+        st.fingers[fi].angles=latest.angles_deg; st.fingers[fi].ts=Date.now();
+        const deg=latest.angles_deg;
+        for (let i=0;i<5;i++) tdeg[fi][i]=(typeof deg[i]==='number'?deg[i]:0);
+      }
+    } else if (sensor.type==='touch6') {
+      if (Array.isArray(sensor.channels)&&sensor.channels.length===6) st.touch=sensor.channels;
+    } else if (sensor.type==='imu6') {
+      if (!Array.isArray(sensor.samples)) continue;
+      const latest=sensor.samples[sensor.samples.length-1];
+      if (latest&&Array.isArray(latest.acc)&&Array.isArray(latest.gyro)){
+        st.imu.acc=latest.acc; st.imu.gyro=latest.gyro;
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

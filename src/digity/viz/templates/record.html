@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>digity viz — Record</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+:root {
+  --bg:       #eef2f7; --surface:  #ffffff; --surface2: #f1f5f9;
+  --border:   #dde3ef; --border2:  #c5cedd;
+  --text:     #0f172a; --muted:    #94a3b8; --muted2:   #64748b;
+  --accent:   #1d4ed8; --green:    #16a34a; --red:      #dc2626;
+  --yellow:   #d97706; --radius:   10px;
+  --mono: 'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+}
+body { background:var(--bg); color:var(--text);
+  font-family:'Inter',-apple-system,'Segoe UI',sans-serif;
+  font-size:15px; display:flex; flex-direction:column;
+  -webkit-font-smoothing:antialiased; }
+
+/* ── Topbar ── */
+.topbar { display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; height:72px; border-bottom:1px solid rgba(255,255,255,.07);
+  background:#0f1e38;
+  flex-shrink:0; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+.topbar-left  { display:flex; align-items:center; gap:32px; }
+.topbar-right { display:flex; align-items:center; gap:14px; }
+.brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+.nav { display:flex; gap:4px; }
+.nav-link { color:rgba(255,255,255,.55); text-decoration:none; font-size:15px; font-weight:600;
+  padding:8px 18px; border-radius:8px; transition:all .15s; letter-spacing:.01em; }
+.nav-link:hover  { color:#fff; background:rgba(255,255,255,.08); }
+.nav-link.active { color:#fff; background:rgba(255,255,255,.12); }
+.sys-clock { font-family:var(--mono); font-size:14px; color:rgba(255,255,255,.4); letter-spacing:.06em; font-weight:600; }
+.badge { display:flex; align-items:center; gap:7px; padding:6px 13px;
+  border-radius:6px; font-size:13px; font-weight:700; letter-spacing:.04em; }
+.badge-green { background:rgba(22,163,74,.15); border:1px solid rgba(22,163,74,.3); color:#4ade80; }
+.badge-red   { background:rgba(220,38,38,.12); border:1px solid rgba(220,38,38,.3); color:#f87171; }
+.badge-muted { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.6); }
+.badge .dot  { width:7px; height:7px; border-radius:50%; }
+.badge-green .dot { background:var(--green); box-shadow:0 0 5px var(--green); }
+.badge-red   .dot { background:var(--red); }
+.badge-muted .dot { background:var(--muted); }
+
+/* ── Layout ── */
+.layout { display:flex; flex:1; min-height:0; overflow:auto;
+  padding:28px 32px 24px; gap:22px; flex-wrap:wrap; align-content:flex-start; }
+
+/* ── Section cards ── */
+.card { background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); overflow:hidden; }
+.card-header { padding:18px 24px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; }
+.card-title { font-size:12px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted2); }
+.card-body { padding:24px; }
+
+/* ── Recording control ── */
+.record-card { flex:1; min-width:480px; }
+.rec-main { display:flex; gap:32px; align-items:flex-start; margin-bottom:28px; }
+
+.rec-btn-wrap { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
+.rec-btn {
+  width:100px; height:100px; border-radius:50%; border:3px solid transparent;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:3px; position:relative; outline:none;
+  transition:transform .12s, box-shadow .2s; }
+.rec-btn.idle {
+  background:radial-gradient(circle at 38% 32%, #1af890, #0d9e62);
+  border-color:rgba(52,211,153,.4);
+  box-shadow:0 0 0 0 rgba(52,211,153,.4), 0 6px 24px rgba(52,211,153,.3); }
+.rec-btn.idle:hover  { transform:scale(1.06);
+  box-shadow:0 0 0 10px rgba(52,211,153,.1), 0 8px 32px rgba(52,211,153,.4); }
+.rec-btn.idle:active { transform:scale(.97); }
+.rec-btn.active {
+  background:radial-gradient(circle at 38% 32%, #ff6b84, #c8213e);
+  border-color:rgba(248,113,113,.4);
+  box-shadow:0 0 0 0 rgba(248,113,113,.4), 0 6px 24px rgba(248,113,113,.3); }
+.rec-btn.active:hover { transform:scale(1.06);
+  box-shadow:0 0 0 10px rgba(248,113,113,.1), 0 8px 32px rgba(248,113,113,.4); }
+.rec-btn svg { width:28px; height:28px; fill:#fff; }
+.rec-btn.active svg { width:20px; height:20px; }
+.rec-btn-label { font-size:12px; font-weight:800; letter-spacing:.12em;
+  color:#fff; margin-top:2px; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+
+.rec-info { flex:1; }
+.rec-state-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.rec-dot { width:9px; height:9px; border-radius:50%; background:var(--muted); transition:background .3s; }
+.rec-dot.live { background:var(--red); animation:pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+.rec-state-label { font-size:13px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted2); }
+.rec-state-label.live { color:var(--red); }
+.rec-timer { font-family:var(--mono); font-size:56px; font-weight:700;
+  line-height:1; letter-spacing:-.02em; color:var(--muted2);
+  margin-bottom:6px; transition:color .3s; }
+.rec-timer.live { color:var(--text); text-shadow:0 0 40px rgba(248,113,113,.25); }
+.rec-session-id { font-family:var(--mono); font-size:12px; color:var(--muted);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px; }
+
+/* ── Metadata form ── */
+.meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.meta-grid.wide { grid-template-columns:1fr; margin-top:16px; }
+.meta-field { display:flex; flex-direction:column; gap:7px; }
+.meta-label { font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.1em; color:var(--muted2); }
+.meta-input, .meta-select {
+  background:var(--bg); border:1px solid var(--border2); border-radius:8px;
+  color:var(--text); padding:11px 14px; font-size:14px; font-family:inherit;
+  outline:none; transition:border-color .15s, box-shadow .15s; width:100%; }
+.meta-input:focus, .meta-select:focus {
+  border-color:var(--accent); box-shadow:0 0 0 3px rgba(29,78,216,.12); }
+.meta-select option { background:var(--surface); }
+.meta-input:disabled, .meta-select:disabled { opacity:.4; cursor:not-allowed; }
+.task-row { display:flex; gap:10px; }
+.task-row .meta-select { flex:1; }
+.btn-add { background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; color:var(--muted2); font-size:14px; font-weight:600;
+  padding:0 16px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.btn-add:hover { border-color:var(--accent); color:var(--accent); }
+
+.hand-tabs { display:flex; gap:8px; }
+.hand-tab { flex:1; padding:11px 0; background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; color:var(--muted2); font-size:14px; font-weight:700;
+  letter-spacing:.04em; cursor:pointer; transition:all .15s; }
+.hand-tab.active { background:rgba(29,78,216,.12); border-color:rgba(29,78,216,.4); color:var(--accent); }
+
+/* ── Telemetry ── */
+.telem-card { width:260px; flex-shrink:0; }
+.telem-row { display:flex; align-items:center; justify-content:space-between;
+  padding:13px 0; border-bottom:1px solid var(--border); }
+.telem-row:last-child { border-bottom:none; }
+.telem-key { font-size:13px; color:var(--muted2); font-weight:500; }
+.telem-val { font-family:var(--mono); font-size:14px; color:var(--text); font-weight:700; }
+.telem-val.green  { color:var(--green); }
+.telem-val.red    { color:var(--red); }
+.telem-val.yellow { color:var(--yellow); }
+
+/* ── Sessions table ── */
+.sessions-card { width:100%; }
+.sessions-count { font-size:13px; color:var(--muted2); font-weight:500; }
+.sessions-table { width:100%; border-collapse:collapse; }
+.sessions-table th { text-align:left; font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--muted2);
+  padding:0 16px 14px; }
+.sessions-table td { padding:13px 16px; border-top:1px solid var(--border);
+  font-size:14px; vertical-align:middle; }
+.sessions-table tr:first-child td { border-top:none; }
+.sessions-table tr:hover td { background:rgba(0,0,0,.025); }
+.session-name { font-family:var(--mono); font-size:13px; color:var(--muted2); }
+.session-task-pill { display:inline-flex; padding:3px 10px; border-radius:4px;
+  font-size:12px; font-weight:700; background:rgba(29,78,216,.1);
+  border:1px solid rgba(29,78,216,.25); color:var(--accent); }
+.actions { display:flex; gap:8px; }
+.btn-icon { background:var(--surface2); border:1px solid var(--border2);
+  border-radius:6px; color:var(--muted2); font-size:13px; font-weight:700;
+  padding:7px 14px; cursor:pointer; transition:all .15s; text-decoration:none; display:inline-flex; align-items:center; }
+.btn-icon:hover { border-color:var(--accent); color:var(--accent); }
+.btn-icon.danger:hover { border-color:var(--red); color:var(--red); }
+.empty-state { text-align:center; padding:48px 0; color:var(--muted); font-size:14px; }
+
+/* ── Countdown overlay ── */
+#countdown-overlay {
+  position:fixed; inset:0; background:rgba(13,17,23,.93);
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:20px; z-index:100; pointer-events:none; opacity:0;
+  transition:opacity .2s; }
+#countdown-overlay.visible { opacity:1; pointer-events:all; }
+.countdown-num { font-family:var(--mono); font-size:112px; font-weight:800;
+  color:var(--text); line-height:1; animation:countPop .4s cubic-bezier(.17,.67,.35,1.3); }
+@keyframes countPop { 0%{transform:scale(.5);opacity:0} 100%{transform:scale(1);opacity:1} }
+.countdown-label { font-size:16px; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted2); }
+
+/* ── Add task modal ── */
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:center; z-index:200;
+  opacity:0; pointer-events:none; transition:opacity .15s; }
+.modal-backdrop.visible { opacity:1; pointer-events:all; }
+.modal { background:var(--surface); border:1px solid var(--border2);
+  border-radius:var(--radius); padding:28px; width:380px;
+  box-shadow:0 24px 64px rgba(0,0,0,.6); }
+.modal-title { font-size:16px; font-weight:700; margin-bottom:20px; }
+.modal-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+.btn-primary { background:var(--accent); color:#fff; border:none;
+  border-radius:7px; font-size:14px; font-weight:700; padding:10px 22px;
+  cursor:pointer; transition:opacity .15s; }
+.btn-primary:hover { opacity:.85; }
+.btn-ghost { background:var(--surface2); border:1px solid var(--border2);
+  border-radius:7px; color:var(--text); font-size:14px; font-weight:600;
+  padding:10px 18px; cursor:pointer; transition:all .15s; }
+.btn-ghost:hover { border-color:var(--muted2); }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a class="brand" href="/chiros/">
+      <img src="/chiros/static/images/Digity_whiteFont.png" alt="digity" style="height:28px;width:auto">
+    </a>
+    <nav class="nav">
+      <a class="nav-link" href="/chiros/">Viewer</a>
+      <a class="nav-link active" href="/chiros/record">Record</a>
+      <a class="nav-link" href="/chiros/setup">Setup</a>
+      {% if current_user.is_admin and not is_local %}<a class="nav-link" href="/chiros/users">Users</a>{% endif %}
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <span class="sys-clock" id="clock">--:--:--</span>
+    <span class="badge badge-muted" id="hz-badge"><span class="dot"></span><span id="hz-val">0.0 Hz</span></span>
+    <span class="badge badge-red"   id="conn-badge"><span class="dot"></span><span id="conn-text">No Signal</span></span>
+  </div>
+</div>
+
+<!-- Countdown overlay -->
+<div id="countdown-overlay">
+  <div class="countdown-num" id="countdown-num">3</div>
+  <div class="countdown-label">Recording starts in…</div>
+</div>
+
+<!-- Add task modal -->
+<div class="modal-backdrop" id="task-modal">
+  <div class="modal">
+    <div class="modal-title">Add task type</div>
+    <div class="meta-field">
+      <label class="meta-label">Task name</label>
+      <input class="meta-input" id="new-task-input" placeholder="e.g. key_press" maxlength="40">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeTaskModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitNewTask()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main layout -->
+<div class="layout">
+
+  <!-- Recording control -->
+  <div class="card record-card">
+    <div class="card-header">
+      <span class="card-title">Recording Control</span>
+      <span class="sessions-count" id="active-session-label"></span>
+    </div>
+    <div class="card-body">
+      <div class="rec-main">
+        <div class="rec-btn-wrap">
+          <button class="rec-btn idle" id="rec-btn" onclick="toggleRecord()">
+            <svg id="rec-icon-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+            <svg id="rec-icon-stop" viewBox="0 0 24 24" style="display:none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+            <span class="rec-btn-label" id="rec-btn-label">REC</span>
+          </button>
+        </div>
+        <div class="rec-info">
+          <div class="rec-state-row">
+            <div class="rec-dot" id="rec-dot"></div>
+            <span class="rec-state-label" id="rec-state-label">Ready</span>
+          </div>
+          <div class="rec-timer" id="rec-timer">00:00</div>
+          <div class="rec-session-id" id="rec-session-id">&nbsp;</div>
+        </div>
+      </div>
+
+      <!-- Metadata -->
+      <div class="meta-grid">
+        <div class="meta-field">
+          <label class="meta-label">User ID</label>
+          <input class="meta-input" id="meta-user" value="user01" placeholder="user01">
+        </div>
+        <div class="meta-field">
+          <label class="meta-label">Task</label>
+          <div class="task-row">
+            <select class="meta-select" id="meta-task"></select>
+            <button class="btn-add" onclick="openTaskModal()">+ Add</button>
+          </div>
+        </div>
+        <div class="meta-field">
+          <label class="meta-label">Hand</label>
+          <div class="hand-tabs">
+            <button class="hand-tab active" id="hand-right" onclick="setHand('right')">Right</button>
+            <button class="hand-tab"        id="hand-left"  onclick="setHand('left')">Left</button>
+            <button class="hand-tab"        id="hand-both"  onclick="setHand('both')">Both</button>
+          </div>
+        </div>
+        <div class="meta-field">
+          <label class="meta-label">Notes</label>
+          <input class="meta-input" id="meta-notes" placeholder="Optional notes…">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Telemetry -->
+  <div class="card telem-card">
+    <div class="card-header"><span class="card-title">Telemetry</span></div>
+    <div class="card-body" style="padding:4px 20px">
+      <div class="telem-row">
+        <span class="telem-key">Glove</span>
+        <span class="telem-val" id="t-conn">—</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-key">Hz</span>
+        <span class="telem-val" id="t-hz">—</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-key">Frames</span>
+        <span class="telem-val" id="t-frames">—</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-key">Duration</span>
+        <span class="telem-val" id="t-dur">—</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-key">Port</span>
+        <span class="telem-val" style="font-size:10px;color:var(--muted)" id="t-port">—</span>
+      </div>
+      <div class="telem-row">
+        <span class="telem-key">Session size</span>
+        <span class="telem-val" id="t-size">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sessions browser -->
+  <div class="card sessions-card">
+    <div class="card-header">
+      <span class="card-title">Sessions</span>
+      <span class="sessions-count" id="sessions-count">—</span>
+    </div>
+    <div class="card-body" style="padding:0 0 4px">
+      <div id="sessions-container">
+        <div class="empty-state">No recordings yet</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="/chiros/static/js/socket.io.min.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let recording   = false;
+let recStartTs  = null;
+let selectedHand = 'right';
+let timerInterval = null;
+let gloveConnected = false;
+let currentFrameCount = 0;
+let currentBytesWritten = 0;
+
+// ── Clock ──────────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toTimeString().slice(0, 8);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Tasks ──────────────────────────────────────────────────────────────────────
+let tasks = [];
+
+async function loadTasks() {
+  try {
+    const r = await fetch('/chiros/api/tasks');
+    tasks = await r.json();
+    renderTaskSelect();
+  } catch(e) {}
+}
+
+function renderTaskSelect() {
+  const sel = document.getElementById('meta-task');
+  const cur = sel.value;
+  sel.innerHTML = '';
+  tasks.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    sel.appendChild(opt);
+  });
+  if (cur && tasks.includes(cur)) sel.value = cur;
+}
+
+window.setHand = function(h) {
+  selectedHand = h;
+  ['right','left','both'].forEach(id => {
+    document.getElementById('hand-'+id).className =
+      'hand-tab' + (h === id ? ' active' : '');
+  });
+};
+
+window.openTaskModal = function() {
+  document.getElementById('task-modal').classList.add('visible');
+  document.getElementById('new-task-input').value = '';
+  setTimeout(() => document.getElementById('new-task-input').focus(), 100);
+};
+window.closeTaskModal = function() {
+  document.getElementById('task-modal').classList.remove('visible');
+};
+window.submitNewTask = async function() {
+  const name = document.getElementById('new-task-input').value.trim();
+  if (!name) return;
+  await fetch('/chiros/api/tasks', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name }) });
+  await loadTasks();
+  document.getElementById('meta-task').value = name;
+  closeTaskModal();
+};
+document.getElementById('new-task-input')
+  .addEventListener('keydown', e => e.key === 'Enter' && submitNewTask());
+
+// ── Recording ──────────────────────────────────────────────────────────────────
+function fmtTime(secs) {
+  const m = Math.floor(secs / 60).toString().padStart(2,'0');
+  const s = Math.floor(secs % 60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+
+function setRecordingUI(active, sessionId) {
+  recording = active;
+  const btn   = document.getElementById('rec-btn');
+  const dot   = document.getElementById('rec-dot');
+  const label = document.getElementById('rec-state-label');
+  const timer = document.getElementById('rec-timer');
+  const sidEl = document.getElementById('rec-session-id');
+  const actEl = document.getElementById('active-session-label');
+  const iconP = document.getElementById('rec-icon-play');
+  const iconS = document.getElementById('rec-icon-stop');
+  const btnL  = document.getElementById('rec-btn-label');
+
+  setInputsDisabled(active);
+
+  if (active) {
+    btn.className = 'rec-btn active';
+    dot.className = 'rec-dot live';
+    label.className = 'rec-state-label live';
+    label.textContent = 'Recording';
+    timer.className = 'rec-timer live';
+    iconP.style.display = 'none';
+    iconS.style.display = '';
+    btnL.textContent = 'STOP';
+    sidEl.textContent = sessionId || '';
+    actEl.textContent = sessionId || '';
+
+    recStartTs = Date.now();
+    currentFrameCount = 0;
+    currentBytesWritten = 0;
+    timerInterval = setInterval(() => {
+      const elapsed = (Date.now() - recStartTs) / 1000;
+      timer.textContent = fmtTime(elapsed);
+      document.getElementById('t-dur').textContent = fmtTime(elapsed);
+    }, 200);
+  } else {
+    btn.className = 'rec-btn idle';
+    dot.className = 'rec-dot';
+    label.className = 'rec-state-label';
+    label.textContent = 'Ready';
+    timer.className = 'rec-timer';
+    iconP.style.display = '';
+    iconS.style.display = 'none';
+    btnL.textContent = 'REC';
+    sidEl.textContent = '\u00a0';
+    actEl.textContent = '';
+    clearInterval(timerInterval);
+    document.getElementById('t-dur').textContent = '—';
+    document.getElementById('t-frames').textContent = '—';
+    document.getElementById('t-size').textContent = '—';
+    loadSessions();
+  }
+}
+
+function setInputsDisabled(d) {
+  ['meta-user','meta-task','meta-notes'].forEach(id =>
+    document.getElementById(id).disabled = d);
+  ['right','left','both'].forEach(id =>
+    document.getElementById('hand-'+id).disabled = d);
+}
+
+async function countdown() {
+  const overlay = document.getElementById('countdown-overlay');
+  const numEl   = document.getElementById('countdown-num');
+  overlay.classList.add('visible');
+  for (let i = 3; i >= 1; i--) {
+    numEl.textContent = i;
+    numEl.style.animation = 'none';
+    void numEl.offsetHeight;
+    numEl.style.animation = '';
+    await new Promise(r => setTimeout(r, 900));
+  }
+  overlay.classList.remove('visible');
+}
+
+window.toggleRecord = async function() {
+  if (recording) {
+    // Stop
+    try {
+      await fetch('/chiros/api/record/stop', { method:'POST' });
+    } catch(e) { alert('Stop failed: ' + e); }
+    return;
+  }
+  // Start — countdown first
+  await countdown();
+
+  const body = {
+    user_id: document.getElementById('meta-user').value.trim() || 'user',
+    task:    document.getElementById('meta-task').value || 'task',
+    hand:    selectedHand,
+    notes:   document.getElementById('meta-notes').value.trim(),
+  };
+  try {
+    const r   = await fetch('/chiros/api/record/start', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!data.ok) { alert('Start failed: ' + (data.error || '')); return; }
+  } catch(e) { alert('Start failed: ' + e); }
+};
+
+// ── Sessions ───────────────────────────────────────────────────────────────────
+async function loadSessions() {
+  try {
+    const r = await fetch('/chiros/api/sessions');
+    const sessions = await r.json();
+    renderSessions(sessions);
+  } catch(e) {}
+}
+
+function renderSessions(sessions) {
+  const container = document.getElementById('sessions-container');
+  document.getElementById('sessions-count').textContent =
+    sessions.length ? sessions.length + ' session' + (sessions.length > 1 ? 's' : '') : '';
+
+  if (!sessions.length) {
+    container.innerHTML = '<div class="empty-state">No recordings yet — press REC to start</div>';
+    return;
+  }
+
+  const rows = sessions.map(s => {
+    const meta   = s.meta || {};
+    const dur    = meta.duration_s ? fmtTime(meta.duration_s) : '—';
+    const frames = meta.frame_count ? meta.frame_count.toLocaleString() : '—';
+    const size   = s.size_bytes ? fmtBytes(s.size_bytes) : '—';
+    const ts     = s.mtime ? new Date(s.mtime*1000).toLocaleString() : '—';
+    const task   = meta.task || '—';
+    const hand   = meta.hand ? meta.hand[0].toUpperCase() + meta.hand.slice(1) : '—';
+    return `
+<tr>
+  <td><span class="session-name">${escHtml(s.name)}</span></td>
+  <td><span class="session-task-pill">${escHtml(task)}</span></td>
+  <td style="color:var(--muted2)">${escHtml(hand)}</td>
+  <td style="font-family:var(--mono);font-size:11px;color:var(--muted2)">${dur}</td>
+  <td style="font-family:var(--mono);font-size:11px;color:var(--muted2)">${frames}</td>
+  <td style="font-family:var(--mono);font-size:11px;color:var(--muted2)">${size}</td>
+  <td style="color:var(--muted);font-size:11px">${ts}</td>
+  <td>
+    <div class="actions">
+      <a class="btn-icon" href="/chiros/api/sessions/${encodeURIComponent(s.name)}/download" download>↓</a>
+      <button class="btn-icon danger" onclick="deleteSession('${escHtml(s.name)}')">✕</button>
+    </div>
+  </td>
+</tr>`;
+  }).join('');
+
+  container.innerHTML = `
+<table class="sessions-table">
+  <thead><tr>
+    <th>Session ID</th><th>Task</th><th>Hand</th>
+    <th>Duration</th><th>Frames</th><th>Size</th><th>Date</th><th></th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table>`;
+}
+
+window.deleteSession = async function(name) {
+  if (!confirm(`Delete recording "${name}"?`)) return;
+  await fetch('/chiros/api/sessions/' + encodeURIComponent(name), { method:'DELETE' });
+  loadSessions();
+};
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Socket.IO ──────────────────────────────────────────────────────────────────
+const socket = io({ path: '/chiros/socket.io' });
+
+socket.on('glove_telemetry', (d) => {
+  gloveConnected = d.connected;
+  const cb = document.getElementById('conn-badge');
+  const ct = document.getElementById('conn-text');
+  const hb = document.getElementById('hz-badge');
+  const hv = document.getElementById('hz-val');
+
+  if (d.connected) {
+    cb.className = 'badge badge-green';
+    ct.textContent = 'Glove';
+    document.getElementById('t-conn').textContent = 'Connected';
+    document.getElementById('t-conn').className = 'telem-val green';
+    document.getElementById('t-port').textContent = d.port || '—';
+  } else {
+    cb.className = 'badge badge-red';
+    ct.textContent = 'No Signal';
+    document.getElementById('t-conn').textContent = 'Disconnected';
+    document.getElementById('t-conn').className = 'telem-val red';
+  }
+  if (d.hz !== undefined) {
+    const hz = d.hz.toFixed(1);
+    hv.textContent = hz + ' Hz';
+    hb.className = 'badge ' + (d.hz > 10 ? 'badge-green' : 'badge-muted');
+    document.getElementById('t-hz').textContent = hz + ' Hz';
+    document.getElementById('t-hz').className = 'telem-val ' + (d.hz > 10 ? 'green' : '');
+  }
+  if (d.frame_count !== undefined && recording) {
+    currentFrameCount = d.frame_count;
+    document.getElementById('t-frames').textContent = d.frame_count.toLocaleString();
+  }
+  if (d.recording && d.session_id && !recording) {
+    setRecordingUI(true, d.session_id);
+  }
+});
+
+socket.on('recording_state', (d) => {
+  if (d.recording) {
+    setRecordingUI(true, d.session_id);
+  } else {
+    if (d.frame_count !== undefined) {
+      document.getElementById('t-frames').textContent = d.frame_count.toLocaleString();
+    }
+    setRecordingUI(false, null);
+  }
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+loadTasks();
+loadSessions();
+
+// Poll recording status on load (e.g. server was already recording)
+fetch('/chiros/api/record/status').then(r => r.json()).then(d => {
+  if (d.recording) {
+    recStartTs = Date.now() - d.duration * 1000;
+    setRecordingUI(true, d.session_id);
+  }
+}).catch(() => {});
+</script>
+</body>
+</html>
