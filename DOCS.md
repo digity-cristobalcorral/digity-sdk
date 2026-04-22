@@ -1,15 +1,16 @@
 # digity SDK — Developer Documentation
 
-> Version 0.2.1 · Python ≥ 3.9 · Proprietary
+> Version 0.2.3 · Python ≥ 3.9 · Proprietary
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#1-overview)
-2. [Installation](#2-installation)
-3. [Quick Start](#3-quick-start)
-4. [Core API Reference](#4-core-api-reference)
+2. [Requirements](#2-requirements)
+3. [Installation](#3-installation)
+4. [Quick Start](#4-quick-start)
+5. [Core API Reference](#5-core-api-reference)
    - [GloveStream](#glovestream)
    - [GloveFrame](#gloveframe)
    - [AnglesSensor / AnglesSample](#anglessensor--anglessample)
@@ -17,15 +18,15 @@
    - [TouchSensor](#touchsensor)
    - [GlovePublisher](#glovepublisher)
    - [GloveNotFoundError](#glovenotfounderror)
-5. [Dashboard (digity\[viz\])](#5-dashboard-digityviz)
-6. [Agent Mode (digity\[agent\])](#6-agent-mode-digityagent)
-7. [Remote Streaming (ZMQ)](#7-remote-streaming-zmq)
-8. [Recording Format](#8-recording-format)
-9. [Configuration](#9-configuration)
-10. [CLI Reference](#10-cli-reference)
-11. [REST API Reference](#11-rest-api-reference)
-12. [WebSocket Events](#12-websocket-events)
-13. [Common Patterns](#13-common-patterns)
+6. [Dashboard (digity\[viz\])](#6-dashboard-digityviz)
+7. [Agent Mode (digity\[agent\])](#7-agent-mode-digityagent)
+8. [Remote Streaming (ZMQ)](#8-remote-streaming-zmq)
+9. [Recording Format](#9-recording-format)
+10. [Configuration](#10-configuration)
+11. [CLI Reference](#11-cli-reference)
+12. [REST API Reference](#12-rest-api-reference)
+13. [WebSocket Events](#13-websocket-events)
+14. [Common Patterns](#14-common-patterns)
 
 ---
 
@@ -43,7 +44,58 @@ Three install targets are available:
 
 ---
 
-## 2. Installation
+## 2. Requirements
+
+**All platforms**
+- Python 3.9 or later
+- Digity exohand connected via USB
+
+### Windows
+
+No additional system dependencies. Install Python from [python.org](https://python.org) or the Microsoft Store, then install the SDK directly with pip.
+
+> **Note:** If `digity-viz` or `digity-agent` is not recognised after install, your Python Scripts folder may not be on PATH. Use `python -m digity.viz` as a drop-in replacement.
+
+### Linux (Debian / Ubuntu)
+
+The `digity[viz]` dashboard uses **pywebview** to open a desktop window. On Linux, pywebview requires GTK and its Python bindings (`gi`), which must be installed via the system package manager — they are not available on PyPI.
+
+**Before** creating your virtual environment:
+
+```bash
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1
+```
+
+Then create the venv and install normally:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install "digity[viz]"
+digity-viz
+```
+
+Alternatively, create the venv with `--system-site-packages` so it inherits the system `gi` module without needing the `apt` step first:
+
+```bash
+python3 -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip install "digity[viz]"
+digity-viz
+```
+
+**Headless / no display** — the server still starts and prints the URL. Access it from your local machine via SSH tunnel:
+
+```bash
+ssh -L 5001:127.0.0.1:5001 user@server
+# then open http://localhost:5001/chiros/ in your local browser
+```
+
+The core SDK (`pip install digity`) has no extra system dependencies on any platform.
+
+---
+
+## 3. Installation
 
 ```bash
 # Core SDK (sensor streaming only)
@@ -55,8 +107,6 @@ pip install "digity[viz]"
 # Agent mode (relay to cloud dashboard)
 pip install "digity[agent]"
 ```
-
-**Requirements:** Python 3.9 or later, Digity exohand connected via USB.
 
 ---
 
