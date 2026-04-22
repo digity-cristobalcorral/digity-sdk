@@ -20,6 +20,7 @@ with GloveStream() as stream:
 
 ## Contents
 
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [GloveStream](#glovestream)
@@ -31,6 +32,57 @@ with GloveStream() as stream:
 - [Publish over the network (ZMQ)](#publish-over-the-network-zmq)
 - [Remote ZMQ receive](#remote-zmq-receive)
 - [Connection speed](#connection-speed)
+
+---
+
+## Requirements
+
+**All platforms**
+- Python 3.9 or later
+- Digity exohand connected via USB
+
+### Windows
+
+No additional system dependencies. Install Python from [python.org](https://python.org) or the Microsoft Store, then install the SDK directly with pip.
+
+> **Note:** If `digity-viz` or `digity-agent` is not recognised after install, your Python Scripts folder may not be on PATH. Use `python -m digity.viz` as a drop-in replacement.
+
+### Linux (Debian / Ubuntu)
+
+The `digity[viz]` dashboard uses **pywebview** to open a desktop window. On Linux, pywebview requires GTK and its Python bindings (`gi`), which must be installed via the system package manager — they are not available on PyPI.
+
+**Before** creating your virtual environment:
+
+```bash
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1
+```
+
+Then create the venv and install:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install "digity[viz]"
+digity-viz
+```
+
+Alternatively, create the venv with `--system-site-packages` so it inherits the system `gi` module:
+
+```bash
+python3 -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip install "digity[viz]"
+digity-viz
+```
+
+**Headless / no display** — if running on a server without a desktop, the dashboard still starts and prints the URL. Access it via SSH tunnel from your local machine:
+
+```bash
+ssh -L 5001:127.0.0.1:5001 user@server
+# then open http://localhost:5001/chiros/ in your local browser
+```
+
+The core SDK (`pip install digity`) has no extra system dependencies on any platform.
 
 ---
 
@@ -46,8 +98,6 @@ pip install "digity[viz]"
 # SDK + cloud agent relay
 pip install "digity[agent]"
 ```
-
-**Requirements:** Python 3.9 or later · Digity exohand connected via USB.
 
 ---
 
