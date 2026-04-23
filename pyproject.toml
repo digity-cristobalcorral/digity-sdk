@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "digity"
-version = "0.2.3"
+version = "0.2.5"
 description = "Python SDK for the Digity sensorized exohand"
 readme = "README.md"
 license = { text = "Proprietary" }

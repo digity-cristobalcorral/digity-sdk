@@ -107,6 +107,7 @@ body { background:var(--bg); color:var(--text);
     </a>
     <nav class="nav">
       <a class="nav-link" href="/chiros/">Viewer</a>
+      <a class="nav-link" href="/chiros/multiview">Multiview</a>
       <a class="nav-link" href="/chiros/record">Record</a>
       <a class="nav-link active" href="/chiros/setup">Setup</a>
       {% if current_user.is_admin and not is_local %}<a class="nav-link" href="/chiros/users">Users</a>{% endif %}
@@ -119,51 +120,7 @@ body { background:var(--bg); color:var(--text);
 
 <div class="content">
 
-  <!-- Token -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Agent Token</span>
-    </div>
-    <div class="card-body">
-      <p style="font-size:13px;color:var(--muted2);margin-bottom:18px">
-        Your personal token for connecting to the cloud dashboard.
-      </p>
-      <div class="token-row">
-        <input class="token-input" id="agent-token-input" readonly>
-        <button class="btn-ghost" id="copy-btn" onclick="copyToken()">Copy</button>
-        <button class="btn-ghost btn-danger" onclick="regenerateToken()">Regenerate</button>
-      </div>
-      <div class="cmd-hint">
-        python -m digity.viz --agent --token <span id="agent-token-cmd" style="color:var(--accent)">…</span>
-      </div>
-    </div>
-  </div>
 
-  <!-- Stream as Agent -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Stream as Agent</span>
-      <span class="status-badge available">pip</span>
-    </div>
-    <div class="card-body">
-      <div class="download-hero">
-        <div class="download-icon">
-          <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
-        </div>
-        <div class="download-info">
-          <h3>Stream glove to cloud dashboard</h3>
-          <p>Use this PC as an agent — no agent.exe needed. Streams your glove directly to the cloud dashboard.</p>
-        </div>
-      </div>
-      <div class="cmd-hint" style="margin-bottom:10px">pip install <span style="color:var(--accent)">"digity[agent]"</span></div>
-      <div class="cmd-hint" style="margin-bottom:18px">python -m digity.viz --agent --token <span id="agent-stream-token" style="color:var(--accent)">…</span></div>
-      <div class="steps">
-        <div class="step"><span class="step-num">1</span><span>Install agent extra: <strong>pip install "digity[agent]"</strong></span></div>
-        <div class="step"><span class="step-num">2</span><span>Copy your token from the card above</span></div>
-        <div class="step"><span class="step-num">3</span><span>Run the command — glove appears in the cloud Viewer automatically</span></div>
-      </div>
-    </div>
-  </div>
 
   <!-- Recordings folder -->
   <div class="card">

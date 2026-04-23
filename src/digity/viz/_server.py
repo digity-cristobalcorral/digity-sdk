@@ -407,6 +407,12 @@ def setup_page():
     return render_template("setup.html", username="")
 
 
+@app.route("/multiview")
+@login_required
+def multiview_page():
+    return render_template("multiview.html", username="")
+
+
 # ── Recording API ──────────────────────────────────────────────────────────────
 
 @app.route("/api/record/start", methods=["POST"])

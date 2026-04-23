@@ -147,6 +147,7 @@ body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-syste
     </a>
     <nav class="nav">
       <a class="nav-link active" href="/chiros/">Viewer</a>
+      <a class="nav-link" href="/chiros/multiview">Multiview</a>
       <a class="nav-link" href="/chiros/record">Record</a>
       <a class="nav-link" href="/chiros/setup">Setup</a>
       {% if current_user.is_admin and not is_local %}<a class="nav-link" href="/chiros/users">Users</a>{% endif %}
@@ -154,10 +155,6 @@ body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-syste
   </div>
   <div class="topbar-right">
     <span class="rec-live" id="rec-live"><span class="rec-live-dot"></span>REC</span>
-    <div style="display:flex;gap:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:2px">
-      <button class="jog-btn" id="model-ultraleap" onclick="setModel('ultraleap')" style="border:none;background:rgba(14,165,233,.18);color:#7dd3fc">Ultraleap</button>
-      <button class="jog-btn" id="model-shadow"    onclick="setModel('shadow')"    style="border:none">Shadow</button>
-    </div>
     <button class="jog-btn" id="jog-toggle" onclick="toggleJog()">Joint Control</button>
     <span class="chip" id="chip-fps">0 fps</span>
     <span class="chip red" id="chip-signal">No Signal</span>
@@ -197,7 +194,6 @@ body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-syste
 import * as THREE from '/chiros/static/js/three/three.module.js';
 import { OrbitControls }    from '/chiros/static/js/three/OrbitControls.patched.js';
 import { GLTFLoader }       from '/chiros/static/js/three/GLTFLoader.js';
-import { buildShadowHand }  from '/chiros/static/js/shadow_hand.js';
 
 // ── Sensor state ───────────────────────────────────────────────────────────────
 
@@ -342,22 +338,6 @@ const THUMB_ABD_SIGN = 1;
 const DEG2RAD = Math.PI / 180;
 const LERP    = 0.14;
 
-// ── Active model ──────────────────────────────────────────────────────────────
-let activeModel = 'ultraleap'; // 'ultraleap' | 'shadow'
-
-// Shadow Hand retargeting: sensor finger idx → Shadow joint names (in order)
-// fi=0 thumb: abd→THJ5, MCP→THJ2, IP→THJ1
-// fi=1..4 fingers: MCP→xFJ3, PIP→xFJ2, DIP→xFJ1
-const SHADOW_RETARGET = {
-  0: ['THJ4', 'THJ2', 'THJ1'],  // ABD→THJ4 (true abduction joint), MCP→THJ2, IP→THJ1
-  1: ['FFJ3', 'FFJ2', 'FFJ1'],
-  2: ['MFJ3', 'MFJ2', 'MFJ1'],
-  3: ['RFJ3', 'RFJ2', 'RFJ1'],
-  4: ['LFJ3', 'LFJ2', 'LFJ1'],
-};
-
-const shadowHands = { right: null, left: null };
-let shadowReady = false;
 
 // ── Load hand model ───────────────────────────────────────────────────────────
 
@@ -451,57 +431,6 @@ Promise.all([loadHand('right'), loadHand('left')])
     loadingOverlay.querySelector('.spinner').style.display = 'none';
   });
 
-// Shadow hands load on demand when first selected
-async function loadShadowHands() {
-  if (shadowReady) return;
-  try {
-    const [sh_r, sh_l] = await Promise.all([
-      buildShadowHand(loader, true),
-      buildShadowHand(loader, false),
-    ]);
-    shadowHands.right = sh_r;
-    shadowHands.left  = sh_l;
-    scene.add(sh_r.root);
-    scene.add(sh_l.root);
-    sh_r.root.visible = false;
-    sh_l.root.visible = false;
-    shadowReady = true;
-    console.log('[Shadow] loaded');
-  } catch(e) {
-    console.error('[Shadow] load error:', e);
-  }
-}
-
-// ── Model selector ────────────────────────────────────────────────────────────
-window.setModel = async function(model) {
-  if (model === activeModel) return;
-  activeModel = model;
-
-  document.getElementById('model-ultraleap').style.background =
-    model === 'ultraleap' ? 'rgba(14,165,233,.12)' : '';
-  document.getElementById('model-ultraleap').style.color =
-    model === 'ultraleap' ? 'var(--accent)' : '';
-  document.getElementById('model-shadow').style.background =
-    model === 'shadow' ? 'rgba(14,165,233,.12)' : '';
-  document.getElementById('model-shadow').style.color =
-    model === 'shadow' ? 'var(--accent)' : '';
-
-  if (model === 'shadow') {
-    // Hide Ultraleap wrappers (they are children of scene root)
-    scene.children.forEach(c => {
-      if (c._isUltraleapHand) c.visible = false;
-    });
-    await loadShadowHands();
-    if (shadowHands.right) shadowHands.right.root.visible = true;
-    if (shadowHands.left)  shadowHands.left.root.visible  = true;
-  } else {
-    scene.children.forEach(c => {
-      if (c._isUltraleapHand) c.visible = true;
-    });
-    if (shadowHands.right) shadowHands.right.root.visible = false;
-    if (shadowHands.left)  shadowHands.left.root.visible  = false;
-  }
-};
 
 // ── Retargeting: apply sensor angles to bones ─────────────────────────────────
 
@@ -550,28 +479,6 @@ function applyRetarget() {
   }
 }
 
-// ── Shadow Hand retargeting ───────────────────────────────────────────────────
-function applyRetargetShadow() {
-  if (!shadowReady) return;
-  for (const side of ['right', 'left']) {
-    const sh   = shadowHands[side];
-    if (!sh) continue;
-    const cdeg = currentDeg[side];
-    const tdeg = targetDeg[side];
-
-    // Lerp toward targets (shared with Ultraleap)
-    for (let fi = 0; fi <= 4; fi++)
-      for (let j = 0; j < 5; j++)
-        cdeg[fi][j] += ((tdeg[fi][j] || 0) - cdeg[fi][j]) * LERP;
-
-    for (const [fi, jointNames] of Object.entries(SHADOW_RETARGET)) {
-      const fidx = parseInt(fi);
-      for (let j = 0; j < jointNames.length; j++) {
-        sh.setJoint(jointNames[j], (cdeg[fidx][j] || 0) * DEG2RAD);
-      }
-    }
-  }
-}
 
 // ── Sidebar UI ─────────────────────────────────────────────────────────────────
 
@@ -623,8 +530,7 @@ let fpsFrames=0, fpsLast=0;
 function animate(t) {
   requestAnimationFrame(animate);
   controls.update();
-  if (activeModel === 'ultraleap') applyRetarget();
-  else applyRetargetShadow();
+  applyRetarget();
   updateUI();
   fpsFrames++;
   if (t-fpsLast>=1000){

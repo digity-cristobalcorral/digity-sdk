@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>digity viz — Multiview</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+:root {
+  --bg: #eef2f7; --text: #0f172a; --accent: #1d4ed8; --radius: 9px;
+  --mono: 'JetBrains Mono','Fira Code',monospace;
+}
+body { background: var(--bg); color: var(--text);
+  font-family: 'Inter',-apple-system,'Segoe UI',sans-serif;
+  font-size: 14px; display: flex; flex-direction: column;
+  -webkit-font-smoothing: antialiased; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 72px; background: #0f1e38;
+  border-bottom: 1px solid rgba(255,255,255,.07); flex-shrink: 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+.topbar-left  { display: flex; align-items: center; gap: 32px; }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.nav { display: flex; gap: 4px; }
+.nav-link { color: rgba(255,255,255,.55); text-decoration: none; font-size: 15px;
+  font-weight: 600; padding: 8px 18px; border-radius: 8px; transition: all .15s;
+  letter-spacing: .01em; }
+.nav-link:hover  { color: #fff; background: rgba(255,255,255,.08); }
+.nav-link.active { color: #fff; background: rgba(255,255,255,.12); }
+.chip { padding: 6px 14px; border-radius: 6px; font-size: 13px;
+  font-family: monospace; font-weight: 700;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.6); letter-spacing: .03em; }
+.chip.green { color: #4ade80; border-color: rgba(74,222,128,.3); background: rgba(74,222,128,.1); }
+.chip.red   { color: #f87171; border-color: rgba(248,113,113,.3); background: rgba(248,113,113,.1); }
+
+.canvas-wrapper { flex: 1; position: relative; overflow: hidden; background: #0a0e18; }
+#canvas { display: block; width: 100%; height: 100%; outline: none; }
+
+/* ── Hand labels overlay ── */
+.hand-labels { position: absolute; bottom: 20px; left: 0; right: 0;
+  display: flex; justify-content: space-around; pointer-events: none; padding: 0 5%; }
+.hand-label { font-size: 13px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: rgba(255,255,255,.45);
+  text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+
+#loading-overlay { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; background: #0a0e18;
+  color: rgba(255,255,255,.45); font-size: 13px; gap: 12px;
+  z-index: 10; transition: opacity .4s; }
+#loading-overlay.hidden { opacity: 0; pointer-events: none; }
+.spinner { width: 32px; height: 32px; border: 2px solid rgba(255,255,255,.15);
+  border-top-color: #38bdf8; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hint { position: absolute; bottom: 14px; right: 16px; font-size: 11px;
+  color: rgba(255,255,255,.3); pointer-events: none; letter-spacing: .02em; }
+
+/* ── Joint control panel ── */
+.jog-btn { padding: 8px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.08); color: rgba(255,255,255,.65); font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: all .15s; letter-spacing: .02em; }
+.jog-btn:hover  { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); color: #fff; }
+.jog-btn.active { color: #7dd3fc; border-color: rgba(125,211,252,.4); background: rgba(56,189,248,.12); }
+
+#jog-panel { position: absolute; top: 0; right: 0; bottom: 0; width: 300px;
+  background: #0e1d35; border-left: 1px solid rgba(255,255,255,.08);
+  overflow-y: auto; padding: 16px 14px; display: none; flex-direction: column;
+  gap: 10px; z-index: 5; }
+#jog-panel.open { display: flex; }
+#jog-panel::-webkit-scrollbar { width: 5px; }
+#jog-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 3px; }
+.jog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.jog-title  { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #7dd3fc; }
+.jog-reset  { font-size: 12px; color: rgba(255,255,255,.45); background: none;
+  border: 1px solid rgba(255,255,255,.15); border-radius: 5px; padding: 4px 10px; cursor: pointer; }
+.jog-reset:hover { color: #fff; border-color: rgba(255,255,255,.35); }
+.jog-finger { background: #152540; border: 1px solid rgba(255,255,255,.09);
+  border-radius: 9px; padding: 12px 14px; }
+.jog-finger-name { font-size: 11px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: rgba(255,255,255,.45); margin-bottom: 10px; }
+.jog-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.jog-row:last-child { margin-bottom: 0; }
+.jog-lbl { font-size: 12px; color: rgba(255,255,255,.45); width: 36px; flex-shrink: 0; font-weight: 500; }
+.jog-slider { flex: 1; height: 4px; accent-color: #38bdf8; cursor: pointer; }
+.jog-num { font-size: 12px; font-family: 'JetBrains Mono',monospace; color: #e2e8f0;
+  width: 34px; text-align: right; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a class="brand" href="/chiros/">
+      <img src="/chiros/static/images/Digity_whiteFont.png" alt="digity" style="height:28px;width:auto">
+    </a>
+    <nav class="nav">
+      <a class="nav-link" href="/chiros/">Viewer</a>
+      <a class="nav-link active" href="/chiros/multiview">Multiview</a>
+      <a class="nav-link" href="/chiros/record">Record</a>
+      <a class="nav-link" href="/chiros/setup">Setup</a>
+      {% if current_user.is_admin and not is_local %}<a class="nav-link" href="/chiros/users">Users</a>{% endif %}
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <button class="jog-btn" id="jog-toggle" onclick="toggleJog()">Joint Control</button>
+    <span class="chip" id="chip-fps">0 fps</span>
+    <span class="chip red" id="chip-signal">No Signal</span>
+  </div>
+</div>
+
+<div class="canvas-wrapper">
+  <canvas id="canvas"></canvas>
+  <div class="hand-labels">
+    <span class="hand-label">Ultraleap</span>
+    <span class="hand-label">Shadow</span>
+    <span class="hand-label">Allegro</span>
+    <span class="hand-label">Inspire</span>
+  </div>
+  <div id="loading-overlay"><div class="spinner"></div><span>Loading hand models…</span></div>
+  <div class="hint">drag to rotate · scroll to zoom</div>
+  <div id="jog-panel"></div>
+</div>
+
+<script src="/chiros/static/js/socket.io.min.js"></script>
+<script type="module">
+import * as THREE from '/chiros/static/js/three/three.module.js';
+import { OrbitControls }   from '/chiros/static/js/three/OrbitControls.patched.js';
+import { GLTFLoader }      from '/chiros/static/js/three/GLTFLoader.js';
+import { buildShadowHand }  from '/chiros/static/js/shadow_hand.js';
+import { buildAllegroHand } from '/chiros/static/js/allegro_hand.js';
+import { buildInspireHand } from '/chiros/static/js/inspire_hand.js';
+
+// ── Sensor state (right hand only for multiview) ───────────────────────────────
+function makeTargetDeg() {
+  return {0:[0,0,0,0,0],1:[0,0,0,0,0],2:[0,0,0,0,0],3:[0,0,0,0,0],4:[0,0,0,0,0]};
+}
+const targetDeg  = makeTargetDeg();
+const currentDeg = makeTargetDeg();
+let lastFrameTs = 0;
+let pktTotal = 0;
+
+const DEG2RAD = Math.PI / 180;
+const LERP    = 0.14;
+
+// ── Three.js scene ─────────────────────────────────────────────────────────────
+const canvas  = document.getElementById('canvas');
+const wrapper = canvas.parentElement;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07090e);
+scene.fog = new THREE.FogExp2(0x07090e, 0.012);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 50);
+camera.position.set(0, 0.06, 1.28);
+
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0, 0);
+controls.enableDamping = true; controls.dampingFactor = 0.07;
+controls.minDistance = 0.5; controls.maxDistance = 4.0;
+
+function resize() {
+  const w = wrapper.clientWidth, h = wrapper.clientHeight;
+  renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+resize(); window.addEventListener('resize', resize);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0xffe8d0, 0.8));
+const key = new THREE.DirectionalLight(0xfff4e0, 3.5);
+key.position.set(0.4, 1.0, 0.6);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.near = 0.01; key.shadow.camera.far = 4;
+key.shadow.camera.left = key.shadow.camera.bottom = -0.8;
+key.shadow.camera.right = key.shadow.camera.top   =  0.8;
+scene.add(key);
+const fill1 = new THREE.DirectionalLight(0x88aaff, 0.9);
+fill1.position.set(-0.5, 0.3, -0.3);
+scene.add(fill1);
+const fill2 = new THREE.DirectionalLight(0xffcc99, 0.4);
+fill2.position.set(0, -0.5, 0.5);
+scene.add(fill2);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(8, 6),
+  new THREE.MeshStandardMaterial({ color: 0x060a10, roughness: 1 })
+);
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.22; ground.receiveShadow = true;
+scene.add(ground);
+const grid = new THREE.GridHelper(2.4, 24, 0x111a28, 0x0b1320);
+grid.position.y = -0.219;
+scene.add(grid);
+
+// ── Hand positions ─────────────────────────────────────────────────────────────
+// Each hand is positioned at a different x; y=-0.10 is the default from robot builders.
+// We override root.position after building.
+const HAND_X = [-0.62, -0.21, 0.21, 0.62];
+
+// ── Ultraleap retarget ─────────────────────────────────────────────────────────
+const UL_RETARGET = {
+  0: ['thumb_meta', 'thumb_a', 'thumb_b'],
+  1: ['index_a',  'index_b',  'index_c'],
+  2: ['middle_a', 'middle_b', 'middle_c'],
+  3: ['ring_a',   'ring_b',   'ring_c'],
+  4: ['pinky_a',  'pinky_b',  'pinky_c'],
+};
+const FLEX_AXIS = new THREE.Vector3(0, 0, 1);
+const THUMB_ABD_AXIS = new THREE.Vector3(0, 1, 0);
+const _flexQ = new THREE.Quaternion();
+const _abdQ  = new THREE.Quaternion();
+
+// ultraleapInfo: { bones, restQuats, wrapper }
+let ultraleapInfo = null;
+
+async function loadUltraleap() {
+  const loader = new GLTFLoader();
+  return new Promise((resolve, reject) => {
+    loader.load('/chiros/static/models/ultraleap_hand_flat.glb', (gltf) => {
+      const root = gltf.scene;
+      root.traverse((obj) => {
+        if (obj.isMesh || obj.isSkinnedMesh) {
+          obj.castShadow    = true;
+          obj.receiveShadow = true;
+          if (obj.isSkinnedMesh) {
+            obj.material = new THREE.MeshPhysicalMaterial({
+              color: 0xd4956a, roughness: 0.78, metalness: 0.0,
+              sheen: 0.35, sheenColor: new THREE.Color(0xff9966),
+              clearcoat: 0.06, clearcoatRoughness: 0.4,
+            });
+            obj.frustumCulled = false;
+          }
+        }
+      });
+      const HAND_SCALE = 0.012;
+      root.scale.set(HAND_SCALE, HAND_SCALE, HAND_SCALE);
+      root.rotation.set(0, Math.PI, 0);
+
+      const w = new THREE.Group();
+      w.scale.x = -1;                           // mirror left→right
+      w.position.set(HAND_X[0], -0.10, 0);       // position 0 = leftmost
+      w.add(root);
+      scene.add(w);
+
+      const bones = {}, restQuats = {};
+      root.traverse((obj) => {
+        if (obj.name) {
+          obj.matrixAutoUpdate = true;
+          bones[obj.name] = obj;
+          restQuats[obj.name] = obj.quaternion.clone();
+        }
+      });
+      ultraleapInfo = { bones, restQuats };
+      resolve();
+    }, undefined, reject);
+  });
+}
+
+function applyRetargetUltraleap() {
+  if (!ultraleapInfo) return;
+  const { bones, restQuats } = ultraleapInfo;
+  for (let fi = 0; fi <= 4; fi++) {
+    const boneNames = UL_RETARGET[fi];
+    for (let seg = 0; seg < boneNames.length; seg++) {
+      const bone = bones[boneNames[seg]];
+      if (!bone) continue;
+      const rest = restQuats[boneNames[seg]];
+      if (fi === 0 && seg === 0) {
+        _abdQ.setFromAxisAngle(THUMB_ABD_AXIS, currentDeg[0][0] * DEG2RAD);
+        bone.quaternion.copy(rest).multiply(_abdQ);
+      } else {
+        _flexQ.setFromAxisAngle(FLEX_AXIS, (currentDeg[fi][seg] || 0) * DEG2RAD);
+        bone.quaternion.copy(rest).multiply(_flexQ);
+      }
+    }
+  }
+}
+
+// ── Shadow retarget ────────────────────────────────────────────────────────────
+const SHADOW_RETARGET = {
+  0: ['THJ4', 'THJ2', 'THJ1'],
+  1: ['FFJ3', 'FFJ2', 'FFJ1'],
+  2: ['MFJ3', 'MFJ2', 'MFJ1'],
+  3: ['RFJ3', 'RFJ2', 'RFJ1'],
+  4: ['LFJ3', 'LFJ2', 'LFJ1'],
+};
+let shadowHand = null;
+
+async function loadShadow(loader) {
+  const h = await buildShadowHand(loader, true);
+  h.root.position.set(HAND_X[1], -0.10, 0);
+  h.root.rotation.y = Math.PI;
+  scene.add(h.root);
+  shadowHand = h;
+}
+
+function applyRetargetShadow() {
+  if (!shadowHand) return;
+  for (const [fi, jointNames] of Object.entries(SHADOW_RETARGET)) {
+    const fidx = parseInt(fi);
+    for (let j = 0; j < jointNames.length; j++) {
+      shadowHand.setJoint(jointNames[j], (currentDeg[fidx][j] || 0) * DEG2RAD);
+    }
+  }
+}
+
+// ── Allegro retarget ───────────────────────────────────────────────────────────
+const ALLEGRO_RETARGET = {
+  0: [
+    ['joint_12.0', 0,    1, 0],
+    ['joint_13.0', null, 0, 0],
+    ['joint_14.0', 1,    1, 0],
+    ['joint_15.0', 2,    1, 0],
+  ],
+  1: [['joint_0.0',null,0,0],['joint_1.0',0,1,0],['joint_2.0',1,1,0],['joint_3.0',2,1,0]],
+  2: [['joint_4.0',null,0,0],['joint_5.0',0,1,0],['joint_6.0',1,1,0],['joint_7.0',2,1,0]],
+  3: [['joint_8.0',null,0,0],['joint_9.0',0,1,0],['joint_10.0',1,1,0],['joint_11.0',2,1,0]],
+};
+let allegroHand = null;
+
+async function loadAllegro(loader) {
+  const h = await buildAllegroHand(loader, true);
+  h.root.position.set(HAND_X[2], -0.10, 0);
+  h.root.rotation.y = Math.PI / 2;
+  scene.add(h.root);
+  allegroHand = h;
+}
+
+// ── Inspire retarget ───────────────────────────────────────────────────────────
+const INSPIRE_RETARGET = {
+  0: [
+    ['thumb_proximal_yaw_joint',   0, 1,     0],
+    ['thumb_proximal_pitch_joint', 1, 1,     0],
+    ['thumb_intermediate_joint',   1, 1.334, 0],
+    ['thumb_distal_joint',         1, 0.667, 0],
+  ],
+  1: [['index_proximal_joint',0,1,0],['index_intermediate_joint',0,1.064,-0.04545]],
+  2: [['middle_proximal_joint',0,1,0],['middle_intermediate_joint',0,1.064,-0.04545]],
+  3: [['ring_proximal_joint',0,1,0],['ring_intermediate_joint',0,1.064,-0.04545]],
+  4: [['pinky_proximal_joint',0,1,0],['pinky_intermediate_joint',0,1.064,-0.04545]],
+};
+let inspireHand = null;
+
+async function loadInspire(loader) {
+  const h = await buildInspireHand(loader, true);
+  h.root.position.set(HAND_X[3], -0.10, 0);
+  h.root.rotation.y = Math.PI / 2;
+  scene.add(h.root);
+  inspireHand = h;
+}
+
+// ── Generic robot retarget helper ──────────────────────────────────────────────
+function applyRetargetRobot(hand, retargetMap) {
+  if (!hand) return;
+  for (const [fi, specs] of Object.entries(retargetMap)) {
+    const idx = parseInt(fi);
+    for (const [name, angleIdx, mul, offRad] of specs) {
+      const rad = angleIdx !== null
+        ? (currentDeg[idx][angleIdx] || 0) * DEG2RAD * mul + offRad
+        : offRad;
+      hand.setJoint(name, rad);
+    }
+  }
+}
+
+// ── Load everything ────────────────────────────────────────────────────────────
+const loader = new GLTFLoader();
+const loadingOverlay = document.getElementById('loading-overlay');
+
+Promise.allSettled([
+  loadUltraleap().then(() => console.log('[multiview] Ultraleap loaded')).catch(e => console.error('[multiview] Ultraleap failed:', e)),
+  loadShadow(loader).then(() => console.log('[multiview] Shadow loaded')).catch(e => console.error('[multiview] Shadow failed:', e)),
+  loadAllegro(loader).then(() => console.log('[multiview] Allegro loaded')).catch(e => console.error('[multiview] Allegro failed:', e)),
+  loadInspire(loader).then(() => console.log('[multiview] Inspire loaded')).catch(e => console.error('[multiview] Inspire failed:', e)),
+]).then(() => {
+  loadingOverlay.classList.add('hidden');
+  setTimeout(() => loadingOverlay.remove(), 500);
+});
+
+// ── Render loop ────────────────────────────────────────────────────────────────
+let fpsFrames = 0, fpsLast = 0;
+
+function animate(t) {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // Lerp all joints toward sensor targets
+  for (let fi = 0; fi <= 4; fi++)
+    for (let j = 0; j < 5; j++)
+      currentDeg[fi][j] += ((targetDeg[fi][j] || 0) - currentDeg[fi][j]) * LERP;
+
+  applyRetargetUltraleap();
+  applyRetargetShadow();
+  applyRetargetRobot(allegroHand, ALLEGRO_RETARGET);
+  applyRetargetRobot(inspireHand, INSPIRE_RETARGET);
+
+  // FPS + signal
+  fpsFrames++;
+  if (t - fpsLast >= 1000) {
+    document.getElementById('chip-fps').textContent = fpsFrames + ' fps';
+    fpsFrames = 0; fpsLast = t;
+  }
+  const anyLive = (Date.now() - lastFrameTs) < 2000;
+  const chipSig = document.getElementById('chip-signal');
+  chipSig.textContent = anyLive ? 'Live' : 'No Signal';
+  chipSig.className   = 'chip ' + (anyLive ? 'green' : 'red');
+
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+
+// ── Joint Control Panel ───────────────────────────────────────────────────────
+let jogMode = false;
+
+const JOG_FINGERS = [
+  { idx:0, name:'Thumb',  joints:[{lbl:'Abd',min:0,max:50},{lbl:'MCP',min:0,max:60},{lbl:'IP', min:10,max:80}] },
+  { idx:1, name:'Index',  joints:[{lbl:'MCP',min:0,max:85},{lbl:'PIP',min:12,max:80},{lbl:'DIP',min:12,max:80}] },
+  { idx:2, name:'Middle', joints:[{lbl:'MCP',min:0,max:85},{lbl:'PIP',min:12,max:80},{lbl:'DIP',min:12,max:80}] },
+  { idx:3, name:'Ring',   joints:[{lbl:'MCP',min:0,max:85},{lbl:'PIP',min:12,max:80},{lbl:'DIP',min:12,max:80}] },
+  { idx:4, name:'Pinky',  joints:[{lbl:'MCP',min:0,max:85},{lbl:'PIP',min:12,max:80},{lbl:'DIP',min:12,max:80}] },
+];
+
+const jogPanel = document.getElementById('jog-panel');
+
+(function buildJogPanel() {
+  const header = document.createElement('div');
+  header.className = 'jog-header';
+  header.innerHTML = `<span class="jog-title">Joint Control</span>
+    <div style="display:flex;gap:4px">
+      <button class="jog-reset" id="jog-random-btn" onclick="jogRandom()">Random</button>
+      <button class="jog-reset" onclick="jogReset()">Reset</button>
+    </div>`;
+  jogPanel.appendChild(header);
+
+  for (const finger of JOG_FINGERS) {
+    const card = document.createElement('div');
+    card.className = 'jog-finger';
+    card.innerHTML = `<div class="jog-finger-name">${finger.name}</div>`;
+    for (let j = 0; j < finger.joints.length; j++) {
+      const jd = finger.joints[j];
+      const sid = `jog-${finger.idx}-${j}`;
+      const row = document.createElement('div');
+      row.className = 'jog-row';
+      row.innerHTML = `<span class="jog-lbl">${jd.lbl}</span>
+        <input class="jog-slider" type="range" id="${sid}" min="${jd.min}" max="${jd.max}" step="1" value="${jd.min}">
+        <span class="jog-num" id="${sid}-val">${jd.min}°</span>`;
+      card.appendChild(row);
+      row.querySelector('input').addEventListener('input', function() {
+        document.getElementById(sid+'-val').textContent = this.value + '°';
+        if (jogMode) {
+          targetDeg[finger.idx][j] = +this.value;
+        }
+      });
+    }
+    jogPanel.appendChild(card);
+  }
+})();
+
+window.jogReset = function() {
+  for (const finger of JOG_FINGERS) {
+    for (let j = 0; j < finger.joints.length; j++) {
+      const min = finger.joints[j].min;
+      const el = document.getElementById(`jog-${finger.idx}-${j}`);
+      if (el) { el.value = min; document.getElementById(`jog-${finger.idx}-${j}-val`).textContent = min+'°'; }
+      targetDeg[finger.idx][j] = min;
+    }
+  }
+};
+
+let randomInterval = null;
+function _applyRandomPose() {
+  for (const finger of JOG_FINGERS) {
+    for (let j = 0; j < finger.joints.length; j++) {
+      const {min, max} = finger.joints[j];
+      const val = Math.round(min + Math.random() * (max - min));
+      const el = document.getElementById(`jog-${finger.idx}-${j}`);
+      if (el) { el.value = val; document.getElementById(`jog-${finger.idx}-${j}-val`).textContent = val+'°'; }
+      targetDeg[finger.idx][j] = val;
+    }
+  }
+}
+
+window.jogRandom = function() {
+  const btn = document.getElementById('jog-random-btn');
+  if (randomInterval) {
+    clearInterval(randomInterval); randomInterval = null;
+    btn.textContent = 'Random'; btn.style.color = '';
+  } else {
+    _applyRandomPose();
+    randomInterval = setInterval(_applyRandomPose, 1200);
+    btn.textContent = 'Stop'; btn.style.color = '#38bdf8';
+  }
+};
+
+window.toggleJog = function() {
+  jogMode = !jogMode;
+  jogPanel.classList.toggle('open', jogMode);
+  document.getElementById('jog-toggle').classList.toggle('active', jogMode);
+  if (!jogMode) {
+    if (randomInterval) {
+      clearInterval(randomInterval); randomInterval = null;
+      const btn = document.getElementById('jog-random-btn');
+      if (btn) { btn.textContent = 'Random'; btn.style.color = ''; }
+    }
+    window.jogReset();
+  }
+};
+
+// ── Socket.IO ──────────────────────────────────────────────────────────────────
+const socket = io({ path: '/chiros/socket.io' });
+
+socket.on('hand_frame', (data) => {
+  if (!data || data.type !== 'sensor_frame') return;
+  const frame = data.frame;
+  if (!frame || !Array.isArray(frame.sensors)) return;
+  if (frame.side !== 'right') return;   // multiview shows right hand only
+
+  lastFrameTs = Date.now();
+  pktTotal++;
+  if (jogMode) return;
+
+  for (const sensor of frame.sensors) {
+    if (!sensor || typeof sensor.type !== 'string') continue;
+    if (sensor.type === 'angles') {
+      const fi = sensor.finger;
+      if (typeof fi !== 'number' || fi < 0 || fi > 4 || !Array.isArray(sensor.samples)) continue;
+      const latest = sensor.samples[sensor.samples.length - 1];
+      if (latest && Array.isArray(latest.angles_deg)) {
+        const deg = latest.angles_deg;
+        for (let i = 0; i < 5; i++) targetDeg[fi][i] = (typeof deg[i] === 'number' ? deg[i] : 0);
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
