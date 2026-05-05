@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Changelog — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/" class="is-active" aria-current="page">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>SDK</div>
+      
+      <h1 class="docs__title">Changelog</h1>
+      
+      <p class="docs__lede">SDK and dashboard releases. Newest first.</p>
+      
+    </header>
+
+    <div class="release">
+<div class="release__h"><div class="release__v">SDK 0.2.5</div><div class="release__d">2025 · 05 · 04</div></div>
+<p class="muted">Multiview dashboard with 4 hands, nav updates, 3D models.</p>
+
+- **New:** Multiview page with up to 200 side-by-side hand instances (`/chiros/multiview`).
+- **New:** Ability Hand and Schunk SVH 3D models.
+- Navigation and template improvements.
+</div>
+
+<div class="release">
+<div class="release__h"><div class="release__v">SDK 0.2.3</div><div class="release__d">2025 · 04 · 23</div></div>
+<p class="muted">Platform-specific requirements documented.</p>
+
+- README and DOCS updated with Windows and Linux installation instructions.
+- GTK system package requirements for `digity[viz]` on Linux.
+</div>
+
+<div class="release">
+<div class="release__h"><div class="release__v">SDK 0.2.2</div><div class="release__d">2025 · 04 · 23</div></div>
+<p class="muted">Agent mode, dashboard recording, recordings folder.</p>
+
+- **New:** Agent relay — `digity-viz --agent --token TOKEN` streams to a remote server.
+- **New:** `digity-agent` CLI for standalone relay without the local dashboard.
+- **New:** Session recording to `~/digity-recordings/` as JSONL.
+- **New:** Setup page for port configuration and agent token management.
+</div>
+
+<div class="release">
+<div class="release__h"><div class="release__v">SDK 0.2.0</div><div class="release__d">2025 · 04 · 01</div></div>
+<p class="muted">digity[viz] web dashboard, GlovePublisher ZMQ broadcasting.</p>
+
+- **New:** `digity[viz]` optional extra — Flask + SocketIO dashboard with 3D hand models.
+- **New:** `GlovePublisher` — ZMQ PUB socket broadcaster for fan-out to multiple consumers.
+- **New:** `GloveStream(host=...)` remote mode — subscribe to a `GlovePublisher` over ZMQ.
+- Dashboard always mounted at `/chiros/` prefix.
+</div>
+
+<div class="release">
+<div class="release__h"><div class="release__v">SDK 0.1.0</div><div class="release__d">2025 · 03 · 01</div></div>
+<p class="muted">First public release.</p>
+
+- HUMI binary protocol parser for ESP32 glove firmware.
+- `GloveStream` context manager — auto-detects USB serial port.
+- Typed dataclasses: `GloveFrame`, `AnglesSensor`, `ImuSensor`, `TouchSensor`.
+- Auto-detection of CH340, CP210x, FTDI, and ESP32 built-in USB-serial chips.
+</div>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="sdk-api-reference/" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>API reference</span>
+        </a>
+        
+        
+        <a href="integrations-dashboard/" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>Dashboard (digity-viz)</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

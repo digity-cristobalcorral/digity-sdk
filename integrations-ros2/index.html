@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ROS2 — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/" class="is-active" aria-current="page">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>Integrations</div>
+      
+      <h1 class="docs__title">ROS2</h1>
+      
+      <p class="docs__lede">A ready-to-use ROS2 package that reads from GloveStream and publishes joint states, IMU, and touch data as standard ROS2 topics.</p>
+      
+    </header>
+
+    <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The <code>digity_ros2</code> package wraps <code>GloveStream</code> in a ROS2 node. It runs the serial read loop in a background thread and publishes data at a configurable rate via a timer — decoupling the glove packet rate from the ROS2 publish rate.</p>
+<p>The package lives in your ROS2 workspace at <code>~/ros2_ws/src/digity_ros2/</code> and requires the Digity SDK (<code>pip install digity</code>) in the Python environment sourced by ROS2.</p>
+<h2 id="topics-published">Topics published<a class="headerlink" href="#topics-published" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/joint_states</code></td>
+<td><code>sensor_msgs/JointState</code></td>
+<td>All 20 finger joint positions in radians, mapped to P50 URDF joint names. Published at <code>publish_hz</code> (default 50 Hz).</td>
+</tr>
+<tr>
+<td><code>/digity/imu</code></td>
+<td><code>sensor_msgs/Imu</code></td>
+<td>Raw IMU (accelerometer + gyroscope i16 counts) per finger. One message per packet.</td>
+</tr>
+<tr>
+<td><code>/digity/touch</code></td>
+<td><code>std_msgs/Float32MultiArray</code></td>
+<td>Touch channels 0–1, 6 per finger. One message per packet.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="build-and-install">Build and install<a class="headerlink" href="#build-and-install" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># Install the SDK into the ROS2 Python environment
+pip install digity
+
+# Build the ROS2 package
+cd ~/ros2_ws
+colcon build --packages-select digity_ros2
+source install/setup.bash
+</code></pre>
+<h2 id="launch">Launch<a class="headerlink" href="#launch" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># Auto-detect glove port
+ros2 launch digity_ros2 digity.launch.py
+
+# Explicit serial port
+ros2 launch digity_ros2 digity.launch.py port:=/dev/ttyUSB0
+
+# Glove on remote machine
+ros2 launch digity_ros2 digity.launch.py host:=192.168.1.10
+
+# Right hand only, 100 Hz
+ros2 launch digity_ros2 digity.launch.py side:=right publish_hz:=100.0
+</code></pre>
+<p>All parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><code>""</code></td>
+<td>Serial port (empty = auto-detect).</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td><code>""</code></td>
+<td>ZMQ host IP for remote mode. Overrides <code>port</code>.</td>
+</tr>
+<tr>
+<td><code>publish_hz</code></td>
+<td><code>50.0</code></td>
+<td><code>/joint_states</code> publish rate in Hz.</td>
+</tr>
+<tr>
+<td><code>side</code></td>
+<td><code>""</code></td>
+<td>Filter by glove side: <code>"right"</code> or <code>"left"</code>. Empty = accept both.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="joint-mapping-p50-urdf">Joint mapping (P50 URDF)<a class="headerlink" href="#joint-mapping-p50-urdf" title="Permanent link">&para;</a></h2>
+<p>The node maps <code>AnglesSensor.samples[-1].angles_deg[i]</code> to P50 URDF joints, converting degrees to radians and clamping to joint limits.</p>
+<table>
+<thead>
+<tr>
+<th>Finger</th>
+<th>Channel 0</th>
+<th>Channel 1</th>
+<th>Channel 2</th>
+<th>Channel 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thumb (0)</td>
+<td>thumb_base2cmc</td>
+<td>thumb_cmc2mcp</td>
+<td>thumb_mcp2pp</td>
+<td>thumb_pp2dp_actuated</td>
+</tr>
+<tr>
+<td>Index (1)</td>
+<td>index_base2mcp</td>
+<td>index_mcp2pp</td>
+<td>index_pp2mp</td>
+<td>index_mp2dp</td>
+</tr>
+<tr>
+<td>Middle (2)</td>
+<td>middle_base2mcp</td>
+<td>middle_mcp2pp</td>
+<td>middle_pp2mp</td>
+<td>middle_mp2dp</td>
+</tr>
+<tr>
+<td>Ring (3)</td>
+<td>ring_base2mcp</td>
+<td>ring_mcp2pp</td>
+<td>ring_pp2mp</td>
+<td>ring_mp2dp</td>
+</tr>
+<tr>
+<td>Pinky (4)</td>
+<td>pinky_base2mcp</td>
+<td>pinky_mcp2pp</td>
+<td>pinky_pp2mp</td>
+<td>pinky_mp2dp</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only <code>frame.group == "hand"</code> packets are routed to joint angles. Arm-group packets (wrist/forearm) are ignored in joint state publishing.</p>
+</div>
+<h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
+<p>The serial read loop runs in a daemon thread that writes to a shared <code>dict</code> protected by a <code>threading.Lock</code>. The ROS2 publish timer reads from the same dict at a fixed rate. This decouples the packet arrival rate (~50 Hz) from the publish rate, preventing the ROS2 spin loop from blocking on serial I/O.</p>
+<h2 id="where-to-go-next">Where to go next<a class="headerlink" href="#where-to-go-next" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../integrations-rerun/">Rerun viewer</a> — visualize glove data in 3D with the Inspire Hand model.</li>
+<li><a href="../sdk-core-concepts/">SDK · Core concepts</a> — the data model the node translates from.</li>
+</ul>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="integrations-dashboard/" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>Dashboard (digity-viz)</span>
+        </a>
+        
+        
+        <a href="integrations-rerun/" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>Rerun viewer</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#overview">Overview</a>
+        
+      
+        <a href="#topics-published">Topics published</a>
+        
+      
+        <a href="#build-and-install">Build and install</a>
+        
+      
+        <a href="#launch">Launch</a>
+        
+      
+        <a href="#joint-mapping-p50-urdf">Joint mapping (P50 URDF)</a>
+        
+      
+        <a href="#architecture">Architecture</a>
+        
+      
+        <a href="#where-to-go-next">Where to go next</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

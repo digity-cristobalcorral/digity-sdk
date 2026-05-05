@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Core concepts — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/" class="is-active" aria-current="page">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>SDK</div>
+      
+      <h1 class="docs__title">Core concepts</h1>
+      
+      <p class="docs__lede">Three ideas that explain everything else — the stream context manager, the frame structure, and how sensors map to finger indices.</p>
+      
+    </header>
+
+    <h2 id="glovestream-the-entry-point">GloveStream — the entry point<a class="headerlink" href="#glovestream-the-entry-point" title="Permanent link">&para;</a></h2>
+<p><code>GloveStream</code> is a Python context manager that opens the glove connection and yields <code>GloveFrame</code> objects. It supports two transport modes:</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>How to activate</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Serial (auto)</td>
+<td><code>GloveStream()</code></td>
+<td>Glove plugged into this machine — port detected automatically.</td>
+</tr>
+<tr>
+<td>Serial (explicit)</td>
+<td><code>GloveStream(port="/dev/ttyUSB0")</code></td>
+<td>Multiple USB devices attached — pick the right one.</td>
+</tr>
+<tr>
+<td>ZMQ remote</td>
+<td><code>GloveStream(host="192.168.1.10")</code></td>
+<td>Glove is on another machine running <code>GlovePublisher</code>.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">from digity import GloveStream
+
+# auto-detect USB port
+with GloveStream() as stream:
+    for frame in stream:
+        ...
+
+# receive from a remote machine
+with GloveStream(host=&quot;192.168.1.10&quot;) as stream:
+    for frame in stream:
+        ...
+</code></pre>
+<h2 id="gloveframe-one-packet-from-the-glove">GloveFrame — one packet from the glove<a class="headerlink" href="#gloveframe-one-packet-from-the-glove" title="Permanent link">&para;</a></h2>
+<p>Each iteration yields a <code>GloveFrame</code>. It corresponds to one HUMI protocol packet from the ESP32 firmware.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ts</code></td>
+<td><code>float</code></td>
+<td>Host timestamp (seconds since epoch, set on receive).</td>
+</tr>
+<tr>
+<td><code>side</code></td>
+<td><code>"right" \| "left"</code></td>
+<td>Which hand the packet came from.</td>
+</tr>
+<tr>
+<td><code>group</code></td>
+<td><code>"hand" \| "arm"</code></td>
+<td>Sensor group: finger nodes or forearm/wrist nodes.</td>
+</tr>
+<tr>
+<td><code>node_id</code></td>
+<td><code>int</code></td>
+<td>PCB node number within the glove (0–4).</td>
+</tr>
+<tr>
+<td><code>seq</code></td>
+<td><code>int</code></td>
+<td>Packet sequence counter (0–65535, wraps around).</td>
+</tr>
+<tr>
+<td><code>sensors</code></td>
+<td><code>list[Sensor]</code></td>
+<td>Sensor objects in this packet.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sensor-types-and-finger-index">Sensor types and finger index<a class="headerlink" href="#sensor-types-and-finger-index" title="Permanent link">&para;</a></h2>
+<p>Always dispatch with <code>isinstance</code> — never compare string names.</p>
+<pre><code class="language-python">from digity import GloveStream, AnglesSensor, ImuSensor, TouchSensor
+
+with GloveStream() as stream:
+    for frame in stream:
+        if frame.group != &quot;hand&quot;:
+            continue  # skip arm/wrist sensors
+
+        for sensor in frame.sensors:
+            if isinstance(sensor, AnglesSensor):
+                angles = sensor.samples[-1].angles_deg
+                print(f&quot;finger {sensor.finger}: {angles}&quot;)
+
+            elif isinstance(sensor, TouchSensor):
+                print(f&quot;touch {sensor.finger}: {sensor.channels}&quot;)
+
+            elif isinstance(sensor, ImuSensor):
+                last = sensor.samples[-1]
+                print(f&quot;imu {sensor.finger}: acc={last.acc}&quot;)
+</code></pre>
+<p>The <code>finger</code> attribute maps to anatomy:</p>
+<table>
+<thead>
+<tr>
+<th>finger index</th>
+<th>Digit</th>
+<th>Angle channels (group=hand)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Thumb</td>
+<td>5 channels</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>Index</td>
+<td>5 channels</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>Middle</td>
+<td>5 channels</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>Ring</td>
+<td>5 channels</td>
+</tr>
+<tr>
+<td><code>4</code></td>
+<td>Pinky</td>
+<td>5 channels</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Arm-group packets (<code>frame.group == "arm"</code>) have 2–3 angle channels and <code>finger=0</code> in their <code>sens_id</code>, which looks like thumb data. <strong>Always filter by <code>frame.group == "hand"</code></strong> before routing finger angles.</p>
+</div>
+<h2 id="samples-sub-frame-timing">Samples — sub-frame timing<a class="headerlink" href="#samples-sub-frame-timing" title="Permanent link">&para;</a></h2>
+<p>Each sensor object carries a <code>samples</code> list. The firmware may batch multiple samples into one packet. Use <code>samples[-1]</code> for the latest reading; iterate over all <code>samples</code> for full-rate processing.</p>
+<table>
+<thead>
+<tr>
+<th>Sample type</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AnglesSample</code></td>
+<td><code>ts_us</code> (µs timestamp), <code>angles_deg</code> (list of floats in degrees)</td>
+</tr>
+<tr>
+<td><code>ImuSample</code></td>
+<td><code>ts_us</code>, <code>acc</code> (tuple of 3 raw i16), <code>gyro</code> (tuple of 3 raw i16)</td>
+</tr>
+<tr>
+<td><code>TouchSensor</code></td>
+<td>No sample list — the sensor is the sample. <code>ts_us</code>, <code>channels</code> (6 floats 0–1), <code>channels_raw</code> (6 ints 0–4095).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="glovepublisher-broadcast-over-zmq">GlovePublisher — broadcast over ZMQ<a class="headerlink" href="#glovepublisher-broadcast-over-zmq" title="Permanent link">&para;</a></h2>
+<p>Fan out glove data to multiple processes or machines:</p>
+<pre><code class="language-python">from digity import GlovePublisher, GloveStream
+
+# Option A: alongside custom processing
+with GlovePublisher() as pub:
+    with GloveStream() as stream:
+        for frame in stream:
+            pub.publish(frame)
+            process(frame)   # your code here
+
+# Option B: standalone publisher (blocks, Ctrl-C to stop)
+with GlovePublisher() as pub:
+    pub.run()
+</code></pre>
+<h2 id="where-to-go-next">Where to go next<a class="headerlink" href="#where-to-go-next" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../sdk-api-reference/">API reference</a> — all classes and their fields.</li>
+<li><a href="../integrations-ros2/">ROS2 bridge</a> — how GloveStream feeds into ROS2 topics.</li>
+<li><a href="../integrations-dashboard/">Dashboard</a> — the built-in recording and visualization tool.</li>
+</ul>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="system-requirements/" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>System requirements</span>
+        </a>
+        
+        
+        <a href="sdk-api-reference/" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>API reference</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#glovestream-the-entry-point">GloveStream — the entry point</a>
+        
+      
+        <a href="#gloveframe-one-packet-from-the-glove">GloveFrame — one packet from the glove</a>
+        
+      
+        <a href="#sensor-types-and-finger-index">Sensor types and finger index</a>
+        
+      
+        <a href="#samples-sub-frame-timing">Samples — sub-frame timing</a>
+        
+      
+        <a href="#glovepublisher-broadcast-over-zmq">GlovePublisher — broadcast over ZMQ</a>
+        
+      
+        <a href="#where-to-go-next">Where to go next</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

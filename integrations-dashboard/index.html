@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard (digity-viz) — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/" class="is-active" aria-current="page">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>Integrations</div>
+      
+      <h1 class="docs__title">Dashboard (digity-viz)</h1>
+      
+      <p class="docs__lede">A real-time web dashboard with 3D hand models, touch visualization, recording, and remote agent relay — all in one command.</p>
+      
+    </header>
+
+    <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># Linux: system packages first
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1
+pip install &quot;digity[viz]&quot;
+
+# Windows: no extra steps
+pip install &quot;digity[viz]&quot;
+</code></pre>
+<h2 id="launch">Launch<a class="headerlink" href="#launch" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># Opens desktop window (requires pywebview)
+digity-viz
+
+# Open in system browser instead
+digity-viz --browser
+
+# Specify serial port explicitly
+digity-viz --port /dev/ttyUSB0
+
+# Fallback on Windows if CLI is not on PATH
+python -m digity.viz
+</code></pre>
+<p>The server always starts at <code>http://127.0.0.1:5001/chiros/</code>.</p>
+<h2 id="dashboard-pages">Dashboard pages<a class="headerlink" href="#dashboard-pages" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>URL</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Viewer</td>
+<td><code>/chiros/</code></td>
+<td>Single 3D hand model animated live from glove data.</td>
+</tr>
+<tr>
+<td>Multiview</td>
+<td><code>/chiros/multiview</code></td>
+<td>Side-by-side view of up to 200 hand instances. Add <code>?model=inspire&amp;copies=4</code> to configure.</td>
+</tr>
+<tr>
+<td>Record</td>
+<td><code>/chiros/record</code></td>
+<td>Record glove sessions to <code>~/digity-recordings/</code> as JSONL files.</td>
+</tr>
+<tr>
+<td>Setup</td>
+<td><code>/chiros/setup</code></td>
+<td>Configure serial port, station name, recording directory, and agent tokens.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3d-hand-models">3D hand models<a class="headerlink" href="#3d-hand-models" title="Permanent link">&para;</a></h2>
+<p>The multiview page supports multiple hand models via the <code>?model=</code> query parameter:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inspire</code></td>
+<td>Inspire Hand (rigid GLB pieces, URDF kinematics).</td>
+</tr>
+<tr>
+<td><code>ability</code></td>
+<td>Ability Hand.</td>
+</tr>
+<tr>
+<td><code>schunk</code></td>
+<td>Schunk SVH hand.</td>
+</tr>
+<tr>
+<td><code>ultraleap</code></td>
+<td>Ultraleap hand skeleton.</td>
+</tr>
+<tr>
+<td><code>shadow</code></td>
+<td>Shadow Dexterous Hand.</td>
+</tr>
+<tr>
+<td><code>allegro</code></td>
+<td>Allegro Hand.</td>
+</tr>
+</tbody>
+</table>
+<p>Example URLs:</p>
+<pre><code>http://127.0.0.1:5001/chiros/multiview?model=inspire&amp;copies=2
+http://127.0.0.1:5001/chiros/multiview?model=shadow&amp;copies=4
+</code></pre>
+<h2 id="recording">Recording<a class="headerlink" href="#recording" title="Permanent link">&para;</a></h2>
+<p>Sessions are saved to <code>~/digity-recordings/&lt;session_id&gt;/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Format</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>meta.json</code></td>
+<td>JSON</td>
+<td>Subject, task, hand side, station, start/end timestamps, frame count.</td>
+</tr>
+<tr>
+<td><code>recording.jsonl</code></td>
+<td>JSON Lines</td>
+<td>One object per line: <code>{"ts": float, "side": ..., "sensors": [...]}</code>. Same structure as <code>GloveFrame</code> dict.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="agent-relay-remote-streaming">Agent relay (remote streaming)<a class="headerlink" href="#agent-relay-remote-streaming" title="Permanent link">&para;</a></h2>
+<p>The agent relay streams glove data from a local machine to a remote server over WebSocket:</p>
+<pre><code class="language-bash"># Start the dashboard with agent mode (streams to remote server)
+digity-viz --agent --token YOUR_TOKEN
+
+# Standalone agent (no local dashboard window)
+digity-agent --token YOUR_TOKEN --url https://app.digity.de/chiros
+</code></pre>
+<p>Obtain a token from the Setup page (<code>/chiros/setup</code>) → Agent tokens section.</p>
+<h2 id="python-api">Python API<a class="headerlink" href="#python-api" title="Permanent link">&para;</a></h2>
+<pre><code class="language-python">from digity.viz import start
+
+# equivalent to: digity-viz --browser --port /dev/ttyUSB0
+start(port=&quot;/dev/ttyUSB0&quot;, browser=True)
+</code></pre>
+<h2 id="where-to-go-next">Where to go next<a class="headerlink" href="#where-to-go-next" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../integrations-rerun/">Rerun viewer</a> — alternative 3D visualization with time-series charts.</li>
+<li><a href="../system-requirements/">System requirements</a> — Linux GTK dependency details.</li>
+</ul>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="changelog/" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>Changelog</span>
+        </a>
+        
+        
+        <a href="integrations-ros2/" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>ROS2</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#installation">Installation</a>
+        
+      
+        <a href="#launch">Launch</a>
+        
+      
+        <a href="#dashboard-pages">Dashboard pages</a>
+        
+      
+        <a href="#3d-hand-models">3D hand models</a>
+        
+      
+        <a href="#recording">Recording</a>
+        
+      
+        <a href="#agent-relay-remote-streaming">Agent relay (remote streaming)</a>
+        
+      
+        <a href="#python-api">Python API</a>
+        
+      
+        <a href="#where-to-go-next">Where to go next</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

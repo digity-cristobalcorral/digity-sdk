@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>System requirements — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/" class="is-active" aria-current="page">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>Getting Started</div>
+      
+      <h1 class="docs__title">System requirements</h1>
+      
+      <p class="docs__lede">What your host computer needs to run the SDK and the optional web dashboard without dropping sensor frames.</p>
+      
+    </header>
+
+    <h2 id="host-operating-system">Host operating system<a class="headerlink" href="#host-operating-system" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>Core SDK</th>
+<th>digity[viz]</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ubuntu 22.04 / 24.04</td>
+<td>✓ Supported</td>
+<td>✓ Supported</td>
+<td>Recommended for teleoperation and ROS2 work. Requires system GTK packages for viz.</td>
+</tr>
+<tr>
+<td>Debian 11 / 12</td>
+<td>✓ Supported</td>
+<td>✓ Supported</td>
+<td>Same GTK requirements as Ubuntu.</td>
+</tr>
+<tr>
+<td>Windows 10 / 11</td>
+<td>✓ Supported</td>
+<td>✓ Supported</td>
+<td>No extra system packages. If CLI missing from PATH, use <code>python -m digity.viz</code>.</td>
+</tr>
+<tr>
+<td>macOS 13+</td>
+<td>✓ Supported</td>
+<td>Best effort</td>
+<td>Core SDK tested. pywebview may require Rosetta on Apple Silicon.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="runtime">Runtime<a class="headerlink" href="#runtime" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Minimum</th>
+<th>Recommended</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.9</td>
+<td>3.11 or 3.12</td>
+</tr>
+<tr>
+<td>USB port</td>
+<td>USB 2.0</td>
+<td>USB 3.0+</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>2 GB free</td>
+<td>4 GB free</td>
+</tr>
+</tbody>
+</table>
+<h2 id="linux-system-packages-for-digityviz">Linux: system packages for digity[viz]<a class="headerlink" href="#linux-system-packages-for-digityviz" title="Permanent link">&para;</a></h2>
+<p>The web dashboard uses <strong>pywebview</strong> (GTK backend) to open a desktop window. The GTK Python bindings are not on PyPI and must come from the system package manager.</p>
+<pre><code class="language-bash"># Run BEFORE creating a virtual environment
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1
+</code></pre>
+<p>Then either install normally:</p>
+<pre><code class="language-bash">pip install &quot;digity[viz]&quot;
+</code></pre>
+<p>Or, if using a venv that needs access to the system packages:</p>
+<pre><code class="language-bash">python3 -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip install &quot;digity[viz]&quot;
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On a server without a display, the dashboard starts and prints its URL but skips the window. Access via SSH tunnel: <code>ssh -L 5001:127.0.0.1:5001 user@server</code>, then open <code>http://localhost:5001/chiros/</code> locally.</p>
+</div>
+<h2 id="serial-port-permissions-linux">Serial port permissions (Linux)<a class="headerlink" href="#serial-port-permissions-linux" title="Permanent link">&para;</a></h2>
+<p>The glove appears as a USB-serial device (<code>/dev/ttyUSB0</code> or <code>/dev/ttyACM0</code>). Your user must be in the <code>dialout</code> group:</p>
+<pre><code class="language-bash">sudo usermod -aG dialout $USER
+# log out and log back in for the change to take effect
+</code></pre>
+<p>The SDK auto-detects the port by scanning for known USB-serial chip vendor IDs (CH340, CP210x, FTDI, ESP32 built-in).</p>
+<h2 id="data-rates">Data rates<a class="headerlink" href="#data-rates" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Stream</th>
+<th>Typical rate</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Angles (per finger)</td>
+<td>~50 Hz</td>
+<td>Up to 5 joint channels per finger node.</td>
+</tr>
+<tr>
+<td>Touch (per finger)</td>
+<td>~50 Hz</td>
+<td>6 capacitive channels per finger, normalized 0–1.</td>
+</tr>
+<tr>
+<td>IMU (per finger)</td>
+<td>~50 Hz</td>
+<td>Accelerometer + gyroscope, raw i16 counts.</td>
+</tr>
+</tbody>
+</table>
+<p>All sensor packets are time-stamped by the host on receive. Frame queue size is 2000 entries; old frames are dropped when the consumer falls behind.</p>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>Quickstart</span>
+        </a>
+        
+        
+        <a href="sdk-core-concepts/" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>Core concepts</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#host-operating-system">Host operating system</a>
+        
+      
+        <a href="#runtime">Runtime</a>
+        
+      
+        <a href="#linux-system-packages-for-digityviz">Linux: system packages for digity[viz]</a>
+        
+      
+        <a href="#serial-port-permissions-linux">Serial port permissions (Linux)</a>
+        
+      
+        <a href="#data-rates">Data rates</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

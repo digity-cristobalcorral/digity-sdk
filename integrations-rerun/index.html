@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rerun viewer — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/" class="is-active" aria-current="page">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>Integrations</div>
+      
+      <h1 class="docs__title">Rerun viewer</h1>
+      
+      <p class="docs__lede">Visualize live glove data in Rerun — an animated 3D Inspire Hand model driven by forward kinematics, plus per-finger angle charts, touch, and IMU.</p>
+      
+    </header>
+
+    <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">pip install rerun-sdk numpy digity
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you have the <code>rerun</code> CLI tool installed (a different PyPI package), import resolution may fail. The viewer script detects this and corrects the path automatically. If you still see an <code>ImportError</code>, install <code>rerun-sdk</code> explicitly.</p>
+</div>
+<h2 id="run-the-viewer">Run the viewer<a class="headerlink" href="#run-the-viewer" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">python examples/rerun_viewer.py           # auto-detect port
+python examples/rerun_viewer.py /dev/ttyUSB0
+python examples/rerun_viewer.py COM3
+</code></pre>
+<p>Rerun spawns its viewer window automatically. Press Ctrl-C to stop.</p>
+<h2 id="default-layout">Default layout<a class="headerlink" href="#default-layout" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Panel</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Left (3/5)</td>
+<td>3D Spatial view of the animated Inspire Hand model.</td>
+</tr>
+<tr>
+<td>Top-right</td>
+<td>Tabbed time-series: per-finger angle channels (5 joints × 5 fingers).</td>
+</tr>
+<tr>
+<td>Bottom-right</td>
+<td>Touch channels and IMU (acc + gyro) per finger.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-the-3d-model-works">How the 3D model works<a class="headerlink" href="#how-the-3d-model-works" title="Permanent link">&para;</a></h2>
+<p>The Inspire Hand model uses rigid GLB mesh pieces — one per link — positioned via a URDF-derived kinematic chain. For each frame, the viewer computes each link's pose by composing the joint's rest quaternion (from URDF RPY angles) with a rotation about the joint axis by the live glove angle:</p>
+<pre><code class="language-python">for jname, _, child, xyz, _, axis in _JOINT_DEFS:
+    angle = joint_angles.get(jname, 0.0)
+    q = quat_mul(_REST_QUATS[jname], axis_angle_quat(axis, angle))
+    rr.log(
+        _LINK_PATHS[child],
+        rr.Transform3D(translation=xyz, mat3x3=quat_to_mat3(q).tolist()),
+    )
+</code></pre>
+<p>Glove angle channels map to Inspire Hand joints:</p>
+<table>
+<thead>
+<tr>
+<th>Finger</th>
+<th>Angle channel</th>
+<th>Joint</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thumb (0)</td>
+<td>ch[3] — abduction</td>
+<td>thumb_proximal_yaw_joint</td>
+</tr>
+<tr>
+<td>Thumb (0)</td>
+<td>ch[0] — MCP flex</td>
+<td>thumb_proximal_pitch_joint</td>
+</tr>
+<tr>
+<td>Thumb (0)</td>
+<td>ch[1] — PIP</td>
+<td>thumb_intermediate_joint</td>
+</tr>
+<tr>
+<td>Thumb (0)</td>
+<td>ch[2] — DIP</td>
+<td>thumb_distal_joint</td>
+</tr>
+<tr>
+<td>Index–Pinky (1–4)</td>
+<td>ch[0] — proximal flex</td>
+<td><code>&lt;finger&gt;_proximal_joint</code></td>
+</tr>
+<tr>
+<td>Index–Pinky (1–4)</td>
+<td>ch[1] — intermediate flex</td>
+<td><code>&lt;finger&gt;_intermediate_joint</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="important-group-filter">Important: group filter<a class="headerlink" href="#important-group-filter" title="Permanent link">&para;</a></h2>
+<p>The viewer filters <code>frame.group == "hand"</code> before routing finger angles. Without this filter, arm-sensor packets (wrist/forearm nodes with <code>finger=0</code>) would corrupt the thumb animation:</p>
+<pre><code class="language-python">if isinstance(sensor, AnglesSensor):
+    if frame.group == &quot;hand&quot;:   # ← required: skip arm nodes
+        log_angles(sensor.finger, sensor)
+</code></pre>
+<h2 id="where-to-go-next">Where to go next<a class="headerlink" href="#where-to-go-next" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../integrations-dashboard/">Dashboard</a> — built-in web dashboard with recording.</li>
+<li><a href="../integrations-ros2/">ROS2 bridge</a> — publish joint states as ROS2 topics.</li>
+<li><a href="../sdk-core-concepts/#sensor-types-and-finger-index">SDK · Sensor types</a> — group, finger, and channel reference.</li>
+</ul>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="integrations-ros2/" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>ROS2</span>
+        </a>
+        
+        
+        <a href="troubleshooting/" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>Troubleshooting</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#requirements">Requirements</a>
+        
+      
+        <a href="#run-the-viewer">Run the viewer</a>
+        
+      
+        <a href="#default-layout">Default layout</a>
+        
+      
+        <a href="#how-the-3d-model-works">How the 3D model works</a>
+        
+      
+        <a href="#important-group-filter">Important: group filter</a>
+        
+      
+        <a href="#where-to-go-next">Where to go next</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

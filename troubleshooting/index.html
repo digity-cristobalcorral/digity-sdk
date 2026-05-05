@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Troubleshooting — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/" class="is-active" aria-current="page">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>Support</div>
+      
+      <h1 class="docs__title">Troubleshooting</h1>
+      
+      <p class="docs__lede">The most common things that go wrong, what they mean, and how to fix them.</p>
+      
+    </header>
+
+    <h2 id="glove-not-detected-glovenotfounderror">Glove not detected (GloveNotFoundError)<a class="headerlink" href="#glove-not-detected-glovenotfounderror" title="Permanent link">&para;</a></h2>
+<p><code>GloveStream()</code> raises <code>GloveNotFoundError</code>, or <code>find_glove_port()</code> returns <code>None</code>.</p>
+<ul>
+<li><strong>Cable.</strong> Try a different USB cable. Data-capable cables only — some USB-C cables are power-only.</li>
+<li><strong>Port.</strong> Plug directly into the host USB port, not through a hub.</li>
+<li><strong>Permissions (Linux).</strong> Your user must be in the <code>dialout</code> group: <code>sudo usermod -aG dialout $USER</code>, then log out and back in.</li>
+<li><strong>Verify detection.</strong> Run <code>python -c "from digity._serial import find_glove_port; print(find_glove_port())"</code>.</li>
+<li><strong>List all ports.</strong> Run <code>python -m serial.tools.list_ports -v</code> to inspect all USB-serial devices.</li>
+</ul>
+<h2 id="stream-opens-but-no-frames-arrive">Stream opens but no frames arrive<a class="headerlink" href="#stream-opens-but-no-frames-arrive" title="Permanent link">&para;</a></h2>
+<p>The <code>for frame in stream:</code> loop blocks indefinitely without yielding.</p>
+<ul>
+<li>The glove firmware may not be running. Check that the status LED is active.</li>
+<li>Baud rate mismatch — the SDK opens at 921600 baud. If the firmware was flashed with a different rate, communication is silent.</li>
+</ul>
+<h2 id="thumb-angles-move-unexpectedly">Thumb angles move unexpectedly<a class="headerlink" href="#thumb-angles-move-unexpectedly" title="Permanent link">&para;</a></h2>
+<p>The thumb animation jumps around when you move other fingers or the wrist.</p>
+<p><strong>Cause:</strong> arm-group packets (wrist/forearm sensors) have <code>finger=0</code> in their <code>sens_id</code>, which looks like thumb data. Fix: always filter by <code>frame.group == "hand"</code>.</p>
+<pre><code class="language-python">for sensor in frame.sensors:
+    if isinstance(sensor, AnglesSensor):
+        if frame.group == &quot;hand&quot;:   # ← always check this
+            handle_angles(sensor)
+</code></pre>
+<h2 id="dashboard-fails-to-open-on-linux">Dashboard fails to open on Linux<a class="headerlink" href="#dashboard-fails-to-open-on-linux" title="Permanent link">&para;</a></h2>
+<p><code>digity-viz</code> crashes with <code>ModuleNotFoundError: No module named 'gi'</code>.</p>
+<ul>
+<li>Install system GTK packages: <code>sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1</code></li>
+<li>If using a venv, recreate it with <code>python3 -m venv .venv --system-site-packages</code>.</li>
+<li>On headless servers, the window is skipped automatically — the server still starts and prints the URL.</li>
+</ul>
+<h2 id="digity-viz-command-not-found-windows">digity-viz command not found (Windows)<a class="headerlink" href="#digity-viz-command-not-found-windows" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Use the Python module fallback: <code>python -m digity.viz</code></li>
+<li>Or add the Python Scripts folder to PATH: typically <code>%AppData%\Python\Python3xx\Scripts</code>.</li>
+</ul>
+<h2 id="zmq-remote-mode-no-frames-received">ZMQ remote mode — no frames received<a class="headerlink" href="#zmq-remote-mode-no-frames-received" title="Permanent link">&para;</a></h2>
+<p><code>GloveStream(host="192.168.1.10")</code> blocks without data.</p>
+<ul>
+<li>Ensure the remote machine is running <code>GlovePublisher</code> or <code>digity-viz</code>.</li>
+<li>The ZMQ PUB socket listens on port 5555. Check firewall rules on both machines.</li>
+<li>ZMQ PUB/SUB is fire-and-forget — if the publisher started before the subscriber, the first few frames may be missed.</li>
+</ul>
+<h2 id="frames-being-dropped">Frames being dropped<a class="headerlink" href="#frames-being-dropped" title="Permanent link">&para;</a></h2>
+<p>The internal queue holds 2000 entries. If your consumer is slower than the glove packet rate, old frames are dropped silently.</p>
+<ul>
+<li>Move heavy processing out of the <code>for frame in stream:</code> loop into a worker thread.</li>
+<li>If you only need angles, skip <code>ImuSensor</code> and <code>TouchSensor</code> to reduce per-frame work.</li>
+</ul>
+<h2 id="still-stuck">Still stuck?<a class="headerlink" href="#still-stuck" title="Permanent link">&para;</a></h2>
+<p>Open an issue on <a href="https://github.com/digity-cristobalcorral/digity-sdk">github.com/digity-cristobalcorral/digity-sdk</a> or email <a href="mailto:cristobal.corral@digity.de">cristobal.corral@digity.de</a>.</p>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="integrations-rerun/" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>Rerun viewer</span>
+        </a>
+        
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#glove-not-detected-glovenotfounderror">Glove not detected (GloveNotFoundError)</a>
+        
+      
+        <a href="#stream-opens-but-no-frames-arrive">Stream opens but no frames arrive</a>
+        
+      
+        <a href="#thumb-angles-move-unexpectedly">Thumb angles move unexpectedly</a>
+        
+      
+        <a href="#dashboard-fails-to-open-on-linux">Dashboard fails to open on Linux</a>
+        
+      
+        <a href="#digity-viz-command-not-found-windows">digity-viz command not found (Windows)</a>
+        
+      
+        <a href="#zmq-remote-mode-no-frames-received">ZMQ remote mode — no frames received</a>
+        
+      
+        <a href="#frames-being-dropped">Frames being dropped</a>
+        
+      
+        <a href="#still-stuck">Still stuck?</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

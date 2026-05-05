@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>What is Digity — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/" class="is-active" aria-current="page">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>Getting Started</div>
+      
+      <h1 class="docs__title">What is Digity</h1>
+      
+      <p class="docs__lede">A sensorized exohand that captures finger angles, touch, and IMU data in real time over USB. Built for robotics, teleoperation, and physical AI research.</p>
+      
+    </header>
+
+    <p>The Digity glove is a wearable instrument that covers one hand — four fingers and thumb — and streams three types of sensor data to a host computer via USB. The ESP32-based firmware encodes sensor readings in the HUMI binary protocol at up to 50 Hz per finger node; the Python SDK decodes them and yields structured <code>GloveFrame</code> objects to your application.</p>
+<p>The SDK works the moment the glove is plugged in. No homing, no per-session calibration, no cloud dependency. Everything runs locally.</p>
+<h2 id="sensor-streams">Sensor streams<a class="headerlink" href="#sensor-streams" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Stream</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Angles</td>
+<td><code>AnglesSensor</code></td>
+<td>Joint angles in degrees for each finger (up to 5 channels per node). Used for forward kinematics, teleoperation, and imitation learning.</td>
+</tr>
+<tr>
+<td>Touch</td>
+<td><code>TouchSensor</code></td>
+<td>6-channel capacitive touch per finger, normalized 0–1. Detects contact and pressure on the fingertip and phalanges.</td>
+</tr>
+<tr>
+<td>IMU</td>
+<td><code>ImuSensor</code></td>
+<td>6-axis inertial (accelerometer + gyroscope) raw counts per finger node. Useful for impact detection and orientation estimation.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="who-it-is-for">Who it is for<a class="headerlink" href="#who-it-is-for" title="Permanent link">&para;</a></h2>
+<p>The primary audience is anthropomorphic robotics, physical AI, and simulation — researchers and engineers who need high-fidelity hand motion and contact data as input to teleoperation pipelines, imitation-learning datasets, and embodied-AI training.</p>
+<ul>
+<li><strong>Robot teleoperation</strong> — stream live finger poses into a ROS2 node driving a robot hand.</li>
+<li><strong>Dataset collection</strong> — record demonstrations with the built-in dashboard and export for training.</li>
+<li><strong>Simulation</strong> — feed live angles into Isaac Sim, MuJoCo, or Unity for physics-based control.</li>
+<li><strong>Research</strong> — access the raw sensor stack directly from Python.</li>
+</ul>
+<h2 id="what-it-is-not">What it is not<a class="headerlink" href="#what-it-is-not" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Not a haptic feedback or force-display device — it only senses, it does not actuate.</li>
+<li>Not a medical or clinical device.</li>
+<li>Not a closed system — the full sensor stack is accessible via the Python SDK.</li>
+</ul>
+<h2 id="where-to-go-next">Where to go next<a class="headerlink" href="#where-to-go-next" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../">Quickstart</a> — from plugged-in glove to a live data stream in five minutes.</li>
+<li><a href="../system-requirements/">System requirements</a> — what your host needs.</li>
+<li><a href="../sdk-core-concepts/">SDK · Core concepts</a> — the data model and how frames are structured.</li>
+</ul>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        <div></div>
+        
+        <a href="" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>Quickstart</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#sensor-streams">Sensor streams</a>
+        
+      
+        <a href="#who-it-is-for">Who it is for</a>
+        
+      
+        <a href="#what-it-is-not">What it is not</a>
+        
+      
+        <a href="#where-to-go-next">Where to go next</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

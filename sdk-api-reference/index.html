@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>API reference — Digity SDK Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../assets/site.css" />
+
+<link rel="stylesheet" href="../assets/docs.css" />
+
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href=".." aria-label="Digity SDK">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="..">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Getting Started</div>
+          
+            
+              <a href="what-is-digity/">What is Digity</a>
+            
+          
+            
+              <a href="">Quickstart</a>
+            
+          
+            
+              <a href="system-requirements/">System requirements</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">SDK</div>
+          
+            
+              <a href="sdk-core-concepts/">Core concepts</a>
+            
+          
+            
+              <a href="sdk-api-reference/" class="is-active" aria-current="page">API reference</a>
+            
+          
+            
+              <a href="changelog/">Changelog</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Integrations</div>
+          
+            
+              <a href="integrations-dashboard/">Dashboard (digity-viz)</a>
+            
+          
+            
+              <a href="integrations-ros2/">ROS2</a>
+            
+          
+            
+              <a href="integrations-rerun/">Rerun viewer</a>
+            
+          
+        </div>
+        
+      
+        
+        <div class="dtree__group">
+          <div class="dtree__h">Support</div>
+          
+            
+              <a href="troubleshooting/">Troubleshooting</a>
+            
+          
+        </div>
+        
+      
+      <div class="dtree__foot">
+        <a href="https://github.com/digity-cristobalcorral/digity-sdk" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      
+      <div class="docs__eyebrow"><span class="dot"></span>SDK</div>
+      
+      <h1 class="docs__title">API reference</h1>
+      
+      <p class="docs__lede">The complete Python surface — open a stream, read sensor data, broadcast over ZMQ, handle errors.</p>
+      
+    </header>
+
+    <h2 id="glovestream">GloveStream<a class="headerlink" href="#glovestream" title="Permanent link">&para;</a></h2>
+<div class="apisig"><div class="apisig__name"><code>GloveStream(port: str | None = None, host: str | None = None)</code></div></div>
+
+<p>Context manager that yields <code>GloveFrame</code> objects on every iteration.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td>Serial port path (<code>"/dev/ttyUSB0"</code>, <code>"COM3"</code>). Pass <code>None</code> to auto-detect.</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td>ZMQ host IP for remote mode. Connects to <code>tcp://&lt;host&gt;:5555</code>. Overrides <code>port</code>.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">from digity import GloveStream, GloveNotFoundError
+
+try:
+    with GloveStream() as s:
+        for frame in s:
+            ...
+except GloveNotFoundError as e:
+    print(f&quot;no glove found: {e}&quot;)
+</code></pre>
+<h2 id="gloveframe">GloveFrame<a class="headerlink" href="#gloveframe" title="Permanent link">&para;</a></h2>
+<div class="apisig"><div class="apisig__name"><code>frame.ts → float</code></div></div>
+
+<p>Host timestamp in seconds since epoch, set when the packet is received from the serial buffer.</p>
+<div class="apisig"><div class="apisig__name"><code>frame.side → str</code></div></div>
+
+<p><code>"right"</code> or <code>"left"</code> — which hand this packet came from.</p>
+<div class="apisig"><div class="apisig__name"><code>frame.group → str</code></div></div>
+
+<p><code>"hand"</code> or <code>"arm"</code>. Always filter <code>frame.group == "hand"</code> before routing finger angle data.</p>
+<div class="apisig"><div class="apisig__name"><code>frame.seq → int</code></div></div>
+
+<p>Packet counter 0–65535, wraps around. Use to detect drops.</p>
+<div class="apisig"><div class="apisig__name"><code>frame.sensors → list[Sensor]</code></div></div>
+
+<p>Sensor objects in this packet. Dispatch with <code>isinstance</code>.</p>
+<h2 id="anglessensor">AnglesSensor<a class="headerlink" href="#anglessensor" title="Permanent link">&para;</a></h2>
+<div class="apisig"><div class="apisig__name"><code>sensor.finger → int</code></div></div>
+
+<p>Finger index 0–4 (thumb–pinky).</p>
+<div class="apisig"><div class="apisig__name"><code>sensor.samples → list[AnglesSample]</code></div></div>
+
+<p>One or more batched samples. Use <code>samples[-1]</code> for the latest.</p>
+<div class="apisig"><div class="apisig__name"><code>sample.angles_deg → list[float]</code></div></div>
+
+<p>Joint angles in degrees. For <code>group="hand"</code>, always 5 values (MCP-flex, PIP, DIP, abduction, aux).</p>
+<div class="apisig"><div class="apisig__name"><code>sample.ts_us → int</code></div></div>
+
+<p>Sample timestamp in microseconds (device clock).</p>
+<h2 id="imusensor">ImuSensor<a class="headerlink" href="#imusensor" title="Permanent link">&para;</a></h2>
+<div class="apisig"><div class="apisig__name"><code>sensor.samples → list[ImuSample]</code></div></div>
+
+<div class="apisig"><div class="apisig__name"><code>sample.acc → tuple[int, int, int]</code></div></div>
+
+<p>Raw accelerometer counts (i16), axes X/Y/Z.</p>
+<div class="apisig"><div class="apisig__name"><code>sample.gyro → tuple[int, int, int]</code></div></div>
+
+<p>Raw gyroscope counts (i16), axes X/Y/Z.</p>
+<h2 id="touchsensor">TouchSensor<a class="headerlink" href="#touchsensor" title="Permanent link">&para;</a></h2>
+<div class="apisig"><div class="apisig__name"><code>sensor.channels → list[float]</code></div></div>
+
+<p>6 capacitive values normalized 0–1.</p>
+<div class="apisig"><div class="apisig__name"><code>sensor.channels_raw → list[int]</code></div></div>
+
+<p>Raw 12-bit ADC counts (0–4095).</p>
+<div class="apisig"><div class="apisig__name"><code>sensor.ts_us → int</code></div></div>
+
+<h2 id="glovepublisher">GlovePublisher<a class="headerlink" href="#glovepublisher" title="Permanent link">&para;</a></h2>
+<div class="apisig"><div class="apisig__name"><code>GlovePublisher(port: int = 5555, host: str = "127.0.0.1")</code></div></div>
+
+<p>Context manager that opens a ZMQ PUB socket.</p>
+<div class="apisig"><div class="apisig__name"><code>pub.publish(frame: GloveFrame) → None</code></div></div>
+
+<p>Serialize and broadcast one frame to all ZMQ subscribers.</p>
+<div class="apisig"><div class="apisig__name"><code>pub.run() → None</code></div></div>
+
+<p>Open a <code>GloveStream</code> internally and publish every frame. Blocks until Ctrl-C.</p>
+<h2 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Exception</th>
+<th>Raised when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GloveNotFoundError</code></td>
+<td>No USB-serial glove device was found on the host. Check cable and <code>dialout</code> group membership.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="type-alias">Type alias<a class="headerlink" href="#type-alias" title="Permanent link">&para;</a></h2>
+<div class="apisig"><div class="apisig__name"><code>Sensor = Union[AnglesSensor, ImuSensor, TouchSensor]</code></div></div>
+
+<p>Exported for type annotations.</p>
+
+    
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        
+        <a href="sdk-core-concepts/" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>Core concepts</span>
+        </a>
+        
+        
+        <a href="changelog/" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>Changelog</span>
+        </a>
+        
+      </div>
+      <div class="docs__editline mono">
+        <span>Digity SDK</span>
+        <span><a href="https://github.com/digity-cristobalcorral/digity-sdk" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    
+  </main>
+
+  <!-- RIGHT TOC -->
+  
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      
+        <a href="#glovestream">GloveStream</a>
+        
+      
+        <a href="#gloveframe">GloveFrame</a>
+        
+      
+        <a href="#anglessensor">AnglesSensor</a>
+        
+      
+        <a href="#imusensor">ImuSensor</a>
+        
+      
+        <a href="#touchsensor">TouchSensor</a>
+        
+      
+        <a href="#glovepublisher">GlovePublisher</a>
+        
+      
+        <a href="#errors">Errors</a>
+        
+      
+        <a href="#type-alias">Type alias</a>
+        
+      
+    </div>
+  </aside>
+  
+
+</div>
+
+
+<script src="../assets/docs.js"></script>
+
+<script src="../search/main.js"></script>
+
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>
