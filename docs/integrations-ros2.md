@@ -1,79 +1,44 @@
 ---
 eyebrow: Integrations
-lede: A ready-to-use ROS2 package that reads from GloveStream and publishes joint states, IMU, and touch data as standard ROS2 topics.
+lede: "A reference connector built on the Chiros CDK. Publishes the three streams as ROS2 topics on a configurable QoS profile, with sync flags carried as message-level stamps."
 ---
 
-## Overview
+# ROS2 Integration
 
-The `digity_ros2` package wraps `GloveStream` in a ROS2 node. It runs the serial read loop in a background thread and publishes data at a configurable rate via a timer — decoupling the glove packet rate from the ROS2 publish rate.
+## About the CDK
 
-The package lives in your ROS2 workspace at `~/ros2_ws/src/digity_ros2/` and requires the Digity SDK (`pip install digity`) in the Python environment sourced by ROS2.
+The Chiros SDK ships a stable core API (`chiros.Device`, `chiros.Recorder`, etc.). On top of that sits the CDK (Connector Development Kit), a lower-level layer that exposes the raw frame bus and sync primitives so community contributors can build integrations for specific robot frameworks, simulators, and data-collection pipelines.
 
-## Topics published
+The ROS2 connector is the first reference CDK integration. It is maintained by the Chiros team and tested against ROS2 Humble and Jazzy on Ubuntu 22.04 and 24.04. Community-driven connectors for other frameworks (Isaac Lab, Mujoco Simulate, OpenXR) are welcome; see the CDK documentation for the contributor guide.
 
-| Topic | Type | Description |
+## Topics
+
+The connector publishes four topics per connected device. Topic names are prefixed with the device serial number when more than one device is connected (e.g., `/chiros/00042/kinematics`).
+
+| Topic | Type | Rate |
 |---|---|---|
-| `/joint_states` | `sensor_msgs/JointState` | All 20 finger joint positions in radians, mapped to P50 URDF joint names. Published at `publish_hz` (default 50 Hz). |
-| `/digity/imu` | `sensor_msgs/Imu` | Raw IMU (accelerometer + gyroscope i16 counts) per finger. One message per packet. |
-| `/digity/touch` | `std_msgs/Float32MultiArray` | Touch channels 0–1, 6 per finger. One message per packet. |
-
-## Build and install
-
-```bash
-# Install the SDK into the ROS2 Python environment
-pip install digity
-
-# Build the ROS2 package
-cd ~/ros2_ws
-colcon build --packages-select digity_ros2
-source install/setup.bash
-```
+| `/chiros/kinematics` | `sensor_msgs/JointState` | 100 Hz |
+| `/chiros/touch` | `std_msgs/Float32MultiArray` | 30–100 Hz (device-configured) |
+| `/chiros/imu` | `sensor_msgs/Imu` | 250 Hz |
+| `/chiros/sync` | `std_msgs/Header` | On sync event |
 
 ## Launch
 
 ```bash
-# Auto-detect glove port
-ros2 launch digity_ros2 digity.launch.py
+# Single device, auto-detect
+ros2 launch chiros_ros2 chiros.launch.py
 
-# Explicit serial port
-ros2 launch digity_ros2 digity.launch.py port:=/dev/ttyUSB0
+# Bimanual — two devices, one host
+ros2 launch chiros_ros2 chiros.launch.py bimanual:=true
 
-# Glove on remote machine
-ros2 launch digity_ros2 digity.launch.py host:=192.168.1.10
-
-# Right hand only, 100 Hz
-ros2 launch digity_ros2 digity.launch.py side:=right publish_hz:=100.0
+# Explicit serial numbers
+ros2 launch chiros_ros2 chiros.launch.py left_serial:=00041 right_serial:=00042
 ```
 
-All parameters:
-
-| Parameter | Default | Description |
-|---|---|---|
-| `port` | `""` | Serial port (empty = auto-detect). |
-| `host` | `""` | ZMQ host IP for remote mode. Overrides `port`. |
-| `publish_hz` | `50.0` | `/joint_states` publish rate in Hz. |
-| `side` | `""` | Filter by glove side: `"right"` or `"left"`. Empty = accept both. |
-
-## Joint mapping (P50 URDF)
-
-The node maps `AnglesSensor.samples[-1].angles_deg[i]` to P50 URDF joints, converting degrees to radians and clamping to joint limits.
-
-| Finger | Channel 0 | Channel 1 | Channel 2 | Channel 3 |
-|---|---|---|---|---|
-| Thumb (0) | thumb_base2cmc | thumb_cmc2mcp | thumb_mcp2pp | thumb_pp2dp_actuated |
-| Index (1) | index_base2mcp | index_mcp2pp | index_pp2mp | index_mp2dp |
-| Middle (2) | middle_base2mcp | middle_mcp2pp | middle_pp2mp | middle_mp2dp |
-| Ring (3) | ring_base2mcp | ring_mcp2pp | ring_pp2mp | ring_mp2dp |
-| Pinky (4) | pinky_base2mcp | pinky_mcp2pp | pinky_pp2mp | pinky_mp2dp |
-
-!!! note
-    Only `frame.group == "hand"` packets are routed to joint angles. Arm-group packets (wrist/forearm) are ignored in joint state publishing.
-
-## Architecture
-
-The serial read loop runs in a daemon thread that writes to a shared `dict` protected by a `threading.Lock`. The ROS2 publish timer reads from the same dict at a fixed rate. This decouples the packet arrival rate (~50 Hz) from the publish rate, preventing the ROS2 spin loop from blocking on serial I/O.
+For bimanual use, connect the SYNC cable between the two forearm plates before launching. The connector will automatically arm user-scope sync and carry the sync flag in the `header.stamp` of every message.
 
 ## Where to go next
 
-- [Rerun viewer](integrations-rerun.md) — visualize glove data in 3D with the Inspire Hand model.
-- [SDK · Core concepts](sdk-core-concepts.md) — the data model the node translates from.
+- [Bimanual recording](guide-bimanual.md) — user-scope sync and how to wire two devices.
+- [SDK core concepts](sdk-core-concepts.md) — how the three streams map to the ROS2 topic types.
+- [Troubleshooting](troubleshooting.md) — USB passthrough for WSL2, permission issues on Linux.

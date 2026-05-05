@@ -1,51 +1,32 @@
 ---
 eyebrow: SDK
-lede: SDK and dashboard releases. Newest first.
+lede: "SDK and firmware releases for the Chiros Research Edition. Newest first."
 ---
 
-<div class="release">
-<div class="release__h"><div class="release__v">SDK 0.2.5</div><div class="release__d">2025 · 05 · 04</div></div>
-<p class="muted">Multiview dashboard with 4 hands, nav updates, 3D models.</p>
+# Changelog
 
-- **New:** Multiview page with up to 200 side-by-side hand instances (`/chiros/multiview`).
-- **New:** Ability Hand and Schunk SVH 3D models.
-- Navigation and template improvements.
-</div>
+### SDK 0.4.2 · fw 0.4.2 — 2026 · 04 · 28
 
-<div class="release">
-<div class="release__h"><div class="release__v">SDK 0.2.3</div><div class="release__d">2025 · 04 · 23</div></div>
-<p class="muted">Platform-specific requirements documented.</p>
+Maintenance release.
 
-- README and DOCS updated with Windows and Linux installation instructions.
-- GTK system package requirements for `digity[viz]` on Linux.
-</div>
+- Fixed a rare `SyncDriftError` false positive when the host clock stepped backward (NTP correction during a long session).
+- `chiros doctor` now reports the USB bus speed and warns if the device is on a USB 2.0 hub.
+- Wheels now ship for Python 3.13.
 
-<div class="release">
-<div class="release__h"><div class="release__v">SDK 0.2.2</div><div class="release__d">2025 · 04 · 23</div></div>
-<p class="muted">Agent mode, dashboard recording, recordings folder.</p>
+### SDK 0.4.0 · fw 0.4.0 — 2026 · 03 · 11
 
-- **New:** Agent relay — `digity-viz --agent --token TOKEN` streams to a remote server.
-- **New:** `digity-agent` CLI for standalone relay without the local dashboard.
-- **New:** Session recording to `~/digity-recordings/` as JSONL.
-- **New:** Setup page for port configuration and agent token management.
-</div>
+User-scope sync, public CDK preview.
 
-<div class="release">
-<div class="release__h"><div class="release__v">SDK 0.2.0</div><div class="release__d">2025 · 04 · 01</div></div>
-<p class="muted">digity[viz] web dashboard, GlovePublisher ZMQ broadcasting.</p>
+- **New:** User-scope hardware sync via the external SYNC cable (`chiros.SyncGroup`). Two devices can now share a hardware clock over the 3.5 mm jack.
+- **New:** `SyncDriftError` raised when synchronized devices drift beyond the configured tolerance.
+- **New:** CDK (Connector Development Kit) preview — `chiros.cdk` module for building custom integrations. API is unstable and subject to change.
+- **Breaking:** `Device.stream()` now raises `StreamUnderrunError` instead of silently dropping frames when the USB buffer overflows. Wrap in a try/except or use `frame.stale()` to handle gracefully.
+- `Recorder` archive format updated to v2; v1 archives can be read but not written.
 
-- **New:** `digity[viz]` optional extra — Flask + SocketIO dashboard with 3D hand models.
-- **New:** `GlovePublisher` — ZMQ PUB socket broadcaster for fan-out to multiple consumers.
-- **New:** `GloveStream(host=...)` remote mode — subscribe to a `GlovePublisher` over ZMQ.
-- Dashboard always mounted at `/chiros/` prefix.
-</div>
+### SDK 0.3.0 · fw 0.3.1 — 2025 · 12 · 02
 
-<div class="release">
-<div class="release__h"><div class="release__v">SDK 0.1.0</div><div class="release__d">2025 · 03 · 01</div></div>
-<p class="muted">First public release.</p>
+First public SDK.
 
-- HUMI binary protocol parser for ESP32 glove firmware.
-- `GloveStream` context manager — auto-detects USB serial port.
-- Typed dataclasses: `GloveFrame`, `AnglesSensor`, `ImuSensor`, `TouchSensor`.
-- Auto-detection of CH340, CP210x, FTDI, and ESP32 built-in USB-serial chips.
-</div>
+- Initial release of the `chiros` Python package on PyPI.
+- `Device.discover()`, `Device.open()`, `device.stream()`, and `chiros.Recorder` APIs established.
+- `chiros doctor` CLI command for device health checks.

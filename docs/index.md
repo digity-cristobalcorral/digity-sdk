@@ -1,77 +1,77 @@
 ---
 eyebrow: Getting Started
-lede: From plugged-in glove to a live Python data stream in under five minutes.
+lede: "From sealed box to a live data stream in under fifteen minutes."
 ---
+
+# Quickstart
 
 ## What you'll need
 
-- Your Digity glove and the included USB cable.
-- A workstation running Ubuntu 22.04+, Debian 11+, or Windows 10/11.
-- Python 3.9 or higher.
+- Chiros unit and USB-C cable (included in the box).
+- Ubuntu 22.04+ or macOS 14+.
+- Python 3.10+.
 
 ## Install the SDK
 
 ```bash
-# Core SDK — serial reading only (pyserial + pyzmq)
-pip install digity
+pip install chiros
 
-# Linux: install system packages first (for the web dashboard)
-sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1
-pip install "digity[viz]"
+# Linux: configure udev so your user can access the device without sudo
+sudo cp /path/to/chiros/udev/99-chiros.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-!!! note
-    The GTK system packages must be installed **before** creating your virtual environment, or use `python3 -m venv .venv --system-site-packages` so the venv can find them. See [System requirements](system-requirements.md) for details.
+## Connect & verify
 
-## Connect the glove
-
-Plug the glove into a USB port. On Linux, make sure your user is in the `dialout` group:
+Plug the Chiros unit into a USB-C port, then run the built-in doctor:
 
 ```bash
-# Add your user to the dialout group (log out and back in after)
-sudo usermod -aG dialout $USER
-
-# Verify the glove is detected
-python -c "from digity._serial import find_glove_port; print(find_glove_port())"
+chiros doctor
 ```
 
-On Windows the port is detected automatically — no extra setup needed.
+Expected output:
+
+```
+✓ Device found: Chiros-R  fw 0.4.2  sn 00042
+✓ Kinematics stream OK  (100 Hz, 0 drops)
+✓ Touch stream OK  (50 Hz, 0 drops)
+✓ IMU stream OK  (250 Hz, 0 drops)
+```
 
 ## Open your first stream
 
+Open a Python file and paste the following. `KinematicStream` yields one frame per device cycle at roughly 100 Hz.
+
 ```python
-from digity import GloveStream, AnglesSensor
+import chiros
 
-# auto-detects the USB port
-with GloveStream() as stream:
-    for frame in stream:
-        for sensor in frame.sensors:
-            if isinstance(sensor, AnglesSensor):
-                print(f"finger {sensor.finger}: {sensor.samples[-1].angles_deg}")
+device = chiros.Device.open()
+
+with device.stream() as frames:
+    for frame in frames:
+        print(frame.t, frame.q)
 ```
 
-You should see lines like `finger 1: [12.4, 34.1, 28.0, 5.3, 0.0]` that change when you move your fingers.
+`frame.q` is a NumPy array of joint angles in radians. Press Ctrl+C to stop.
 
-## Launch the dashboard
+## Record a session
 
-The optional `digity[viz]` extra includes a real-time 3D web dashboard:
+`Recorder` writes a self-describing archive that bundles kinematics, touch, and IMU into a single file.
 
-```bash
-# opens desktop window (or browser if no display)
-digity-viz
+```python
+import chiros
 
-# open in system browser instead
-digity-viz --browser
+device = chiros.Device.open()
 
-# fallback on Windows if CLI is not on PATH
-python -m digity.viz
+with chiros.Recorder("my_session.chiros") as rec:
+    with device.stream() as frames:
+        for frame in frames:
+            rec.write(frame)
 ```
 
-The dashboard is always served at `http://127.0.0.1:5001/chiros/`.
+Open the resulting `.chiros` file with the Chiros Viewer or load it back with `chiros.load("my_session.chiros")`.
 
 ## Where to go next
 
-- [Core concepts](sdk-core-concepts.md) — understand frames, sensors, and data types.
-- [API reference](sdk-api-reference.md) — the full Python surface.
-- [ROS2 integration](integrations-ros2.md) — publish glove data as ROS2 topics.
-- [Dashboard guide](integrations-dashboard.md) — recording, remote streaming, and agent mode.
+- [Bimanual recording](guide-bimanual.md) — two hands, one host, real-time sync.
+- [ROS2 integration](integrations-ros2.md) — publish streams as ROS2 topics.

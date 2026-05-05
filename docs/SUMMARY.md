@@ -1,23 +1,24 @@
-# Table of contents
+# Chiros Docs
 
 ## Getting Started
-
-* [What is Digity](README.md)
+* [What is Chiros](what-is-chiros.md)
+* [Hardware overview](hardware-overview.md)
 * [Quickstart](index.md)
 * [System requirements](system-requirements.md)
 
 ## SDK
-
 * [Core concepts](sdk-core-concepts.md)
 * [API reference](sdk-api-reference.md)
 * [Changelog](changelog.md)
 
-## Integrations
+## Hardware Reference
+* [Finger architecture](finger-architecture.md)
 
-* [Dashboard (digity-viz)](integrations-dashboard.md)
+## Guides
+* [Bimanual recording](guide-bimanual.md)
+
+## Integrations
 * [ROS2](integrations-ros2.md)
-* [Rerun viewer](integrations-rerun.md)
 
 ## Support
-
 * [Troubleshooting](troubleshooting.md)

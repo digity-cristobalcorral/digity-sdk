@@ -1,68 +1,51 @@
 ---
 eyebrow: Getting Started
-lede: What your host computer needs to run the SDK and the optional web dashboard without dropping sensor frames.
+lede: "What the host computer needs to run the SDK and capture data without dropping frames, and what the device exposes physically."
 ---
+
+# System Requirements
 
 ## Host operating system
 
-| OS | Core SDK | digity[viz] | Notes |
-|---|---|---|---|
-| Ubuntu 22.04 / 24.04 | ✓ Supported | ✓ Supported | Recommended for teleoperation and ROS2 work. Requires system GTK packages for viz. |
-| Debian 11 / 12 | ✓ Supported | ✓ Supported | Same GTK requirements as Ubuntu. |
-| Windows 10 / 11 | ✓ Supported | ✓ Supported | No extra system packages. If CLI missing from PATH, use `python -m digity.viz`. |
-| macOS 13+ | ✓ Supported | Best effort | Core SDK tested. pywebview may require Rosetta on Apple Silicon. |
+| OS | Status | Notes |
+|---|---|---|
+| Ubuntu 22.04 / 24.04 | Supported | Recommended for teleoperation and ROS2 work. |
+| macOS 14+ | Supported | Tested on Apple Silicon and Intel. |
+| Windows 11 WSL2 | Best effort | USB passthrough via usbipd required. |
+| Windows 11 native | Not supported | Use WSL2 or a Linux machine. |
 
 ## Runtime
 
 | Component | Minimum | Recommended |
 |---|---|---|
-| Python | 3.9 | 3.11 or 3.12 |
-| USB port | USB 2.0 | USB 3.0+ |
-| RAM | 2 GB free | 4 GB free |
+| Python | 3.10 | 3.12 |
+| USB | 3.0 | 3.2 Gen2 |
+| RAM | 4 GB | 8 GB |
+| Disk | ~600 MB | ~5 GB |
 
-## Linux: system packages for digity[viz]
+## Device-side interface
 
-The web dashboard uses **pywebview** (GTK backend) to open a desktop window. The GTK Python bindings are not on PyPI and must come from the system package manager.
+Chiros exposes two physical connectors on the forearm plate. All data travels over the required USB-C connection; the SYNC jack is optional and used only for multi-device or external-tracker workflows.
 
-```bash
-# Run BEFORE creating a virtual environment
-sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1
-```
-
-Then either install normally:
-
-```bash
-pip install "digity[viz]"
-```
-
-Or, if using a venv that needs access to the system packages:
-
-```bash
-python3 -m venv .venv --system-site-packages
-source .venv/bin/activate
-pip install "digity[viz]"
-```
-
-!!! note
-    On a server without a display, the dashboard starts and prints its URL but skips the window. Access via SSH tunnel: `ssh -L 5001:127.0.0.1:5001 user@server`, then open `http://localhost:5001/chiros/` locally.
-
-## Serial port permissions (Linux)
-
-The glove appears as a USB-serial device (`/dev/ttyUSB0` or `/dev/ttyACM0`). Your user must be in the `dialout` group:
-
-```bash
-sudo usermod -aG dialout $USER
-# log out and log back in for the change to take effect
-```
-
-The SDK auto-detects the port by scanning for known USB-serial chip vendor IDs (CH340, CP210x, FTDI, ESP32 built-in).
+| Interface | Connector | Purpose |
+|---|---|---|
+| Host USB-C | USB-C (required) | Power, data, firmware update |
+| External SYNC | 3.5 mm stereo jack (optional) | Hardware sync pulse in/out for multi-device or external-tracker workflows |
 
 ## Data rates
 
-| Stream | Typical rate | Notes |
-|---|---|---|
-| Angles (per finger) | ~50 Hz | Up to 5 joint channels per finger node. |
-| Touch (per finger) | ~50 Hz | 6 capacitive channels per finger, normalized 0–1. |
-| IMU (per finger) | ~50 Hz | Accelerometer + gyroscope, raw i16 counts. |
+The firmware streams three data channels continuously at the rates below. These are target rates; the actual rate on the host depends on USB scheduling and host CPU load.
 
-All sensor packets are time-stamped by the host on receive. Frame queue size is 2000 entries; old frames are dropped when the consumer falls behind.
+| Modality | Target rate | Notes |
+|---|---|---|
+| Kinematics | 100 Hz | All DOFs, both hands if bimanual |
+| Touch | 30–100 Hz | Rate is configurable; higher rates reduce SNR |
+| IMU | 250 Hz | Per-segment; downsampled to 100 Hz in the default SDK config |
+
+## Real-time considerations
+
+For most research use cases the default Python SDK is sufficient. The SDK's background serial thread keeps the read buffer from overflowing; the main thread processes frames at whatever rate the application can sustain.
+
+{% hint style="info" %}
+For bimanual teleoperation at 100 Hz, latency becomes important. Pin the streaming thread to an isolated CPU core and set the process to `SCHED_FIFO` priority. On Ubuntu, install `linux-lowlatency` for sub-millisecond scheduling jitter. See [Bimanual recording](guide-bimanual.md) for a worked example.
+{% endhint %}

@@ -1,116 +1,88 @@
 ---
 eyebrow: SDK
-lede: The complete Python surface — open a stream, read sensor data, broadcast over ZMQ, handle errors.
+lede: "The Python surface, organized by what you typically do: discover devices, open them, read streams, synchronize, record."
 ---
 
-## GloveStream
+# SDK API Reference
 
-<div class="apisig"><div class="apisig__name"><code>GloveStream(port: str | None = None, host: str | None = None)</code></div></div>
+## Discovery & identity
 
-Context manager that yields `GloveFrame` objects on every iteration.
+**`chiros.Device.discover() → list[DeviceInfo]`**
 
-| Parameter | Description |
-|---|---|
-| `port` | Serial port path (`"/dev/ttyUSB0"`, `"COM3"`). Pass `None` to auto-detect. |
-| `host` | ZMQ host IP for remote mode. Connects to `tcp://<host>:5555`. Overrides `port`. |
+Scans all connected USB devices and returns a list of `DeviceInfo` objects for every recognized Chiros unit. Each `DeviceInfo` has `.serial` (str), `.side` ("left" or "right"), and `.firmware` (str). Returns an empty list if no devices are found.
+
+**`chiros.Device.open(serial: str | None = None, side: str | None = None) → Device`**
+
+Opens a connection to a Chiros device. If exactly one device is connected, all arguments are optional. Raises `DeviceNotFoundError` if no matching device is found and `AmbiguousDeviceError` if more than one device matches the criteria.
+
+**`device.info`**
+
+A `DeviceInfo` object for the open device. Read-only. Contains `.serial`, `.side`, `.firmware`, and `.n_dofs` (total degrees of freedom reported by the firmware).
+
+## Streams
+
+**`device.stream(kinematics=True, touch=True, imu=True) → ContextManager[FrameIterator]`**
+
+Opens the data stream and returns a context manager that yields `Frame` objects. Pass `False` for any modality you do not need; this reduces USB bandwidth slightly.
 
 ```python
-from digity import GloveStream, GloveNotFoundError
-
-try:
-    with GloveStream() as s:
-        for frame in s:
-            ...
-except GloveNotFoundError as e:
-    print(f"no glove found: {e}")
+with device.stream() as frames:
+    for frame in frames:
+        process(frame)
 ```
 
-## GloveFrame
+Each `Frame` exposes:
 
-<div class="apisig"><div class="apisig__name"><code>frame.ts → float</code></div></div>
+- `frame.t` — host timestamp, seconds since epoch (float)
+- `frame.q` — joint angles in radians, shape `(N_dofs,)` (NumPy array)
+- `frame.touch` — contact pressures 0–1, shape `(N_pads,)` (NumPy array)
+- `frame.imu` — dict with keys `"acc"` and `"gyro"`, each shape `(N_segments, 3)`
 
-Host timestamp in seconds since epoch, set when the packet is received from the serial buffer.
+**`frame.stale() → bool`**
 
-<div class="apisig"><div class="apisig__name"><code>frame.side → str</code></div></div>
+Returns `True` if this frame contains no new kinematics data since the previous frame (i.e., the kinematics stream underran). Useful for detecting drop events without raising an exception.
 
-`"right"` or `"left"` — which hand this packet came from.
+## Synchronization
 
-<div class="apisig"><div class="apisig__name"><code>frame.group → str</code></div></div>
+**`chiros.SyncGroup(devices: list[Device]) → ContextManager`**
 
-`"hand"` or `"arm"`. Always filter `frame.group == "hand"` before routing finger angle data.
+Arms user-scope hardware sync across a list of devices. Requires a SYNC cable connecting the forearm plates of all devices. The first device in the list becomes the sync leader; all others are followers.
 
-<div class="apisig"><div class="apisig__name"><code>frame.seq → int</code></div></div>
+```python
+left = chiros.Device.open(side="left")
+right = chiros.Device.open(side="right")
 
-Packet counter 0–65535, wraps around. Use to detect drops.
+with chiros.SyncGroup([left, right]):
+    with left.stream() as lf, right.stream() as rf:
+        for frame_l, frame_r in zip(lf, rf):
+            # frame_l.t and frame_r.t are hardware-synchronized
+            process(frame_l, frame_r)
+```
 
-<div class="apisig"><div class="apisig__name"><code>frame.sensors → list[Sensor]</code></div></div>
+**`device.sync_in.arm(polarity="rising") → None`**
 
-Sensor objects in this packet. Dispatch with `isinstance`.
+Manually arm the sync input on a single device, accepting either `"rising"` or `"falling"` edge. Used when integrating with an external pulse source (e.g., an MRI trigger or a motion-capture system).
 
-## AnglesSensor
+## Recording
 
-<div class="apisig"><div class="apisig__name"><code>sensor.finger → int</code></div></div>
+**`chiros.Recorder(path: str | Path, metadata: dict | None = None) → ContextManager`**
 
-Finger index 0–4 (thumb–pinky).
+Opens a `.chiros` recording archive for writing. Accepts an optional `metadata` dict (subject ID, task name, etc.) that is stored in the archive header. Flushes and closes the archive on context exit.
 
-<div class="apisig"><div class="apisig__name"><code>sensor.samples → list[AnglesSample]</code></div></div>
+```python
+with chiros.Recorder("session_01.chiros", metadata={"subject": "P01"}) as rec:
+    with device.stream() as frames:
+        for frame in frames:
+            rec.write(frame)
+```
 
-One or more batched samples. Use `samples[-1]` for the latest.
-
-<div class="apisig"><div class="apisig__name"><code>sample.angles_deg → list[float]</code></div></div>
-
-Joint angles in degrees. For `group="hand"`, always 5 values (MCP-flex, PIP, DIP, abduction, aux).
-
-<div class="apisig"><div class="apisig__name"><code>sample.ts_us → int</code></div></div>
-
-Sample timestamp in microseconds (device clock).
-
-## ImuSensor
-
-<div class="apisig"><div class="apisig__name"><code>sensor.samples → list[ImuSample]</code></div></div>
-
-<div class="apisig"><div class="apisig__name"><code>sample.acc → tuple[int, int, int]</code></div></div>
-
-Raw accelerometer counts (i16), axes X/Y/Z.
-
-<div class="apisig"><div class="apisig__name"><code>sample.gyro → tuple[int, int, int]</code></div></div>
-
-Raw gyroscope counts (i16), axes X/Y/Z.
-
-## TouchSensor
-
-<div class="apisig"><div class="apisig__name"><code>sensor.channels → list[float]</code></div></div>
-
-6 capacitive values normalized 0–1.
-
-<div class="apisig"><div class="apisig__name"><code>sensor.channels_raw → list[int]</code></div></div>
-
-Raw 12-bit ADC counts (0–4095).
-
-<div class="apisig"><div class="apisig__name"><code>sensor.ts_us → int</code></div></div>
-
-## GlovePublisher
-
-<div class="apisig"><div class="apisig__name"><code>GlovePublisher(port: int = 5555, host: str = "127.0.0.1")</code></div></div>
-
-Context manager that opens a ZMQ PUB socket.
-
-<div class="apisig"><div class="apisig__name"><code>pub.publish(frame: GloveFrame) → None</code></div></div>
-
-Serialize and broadcast one frame to all ZMQ subscribers.
-
-<div class="apisig"><div class="apisig__name"><code>pub.run() → None</code></div></div>
-
-Open a `GloveStream` internally and publish every frame. Blocks until Ctrl-C.
+Load a recording back with `chiros.load("session_01.chiros")`, which returns a list of `Frame` objects.
 
 ## Errors
 
 | Exception | Raised when |
 |---|---|
-| `GloveNotFoundError` | No USB-serial glove device was found on the host. Check cable and `dialout` group membership. |
-
-## Type alias
-
-<div class="apisig"><div class="apisig__name"><code>Sensor = Union[AnglesSensor, ImuSensor, TouchSensor]</code></div></div>
-
-Exported for type annotations.
+| `DeviceNotFoundError` | No connected device matches the requested serial or side. |
+| `AmbiguousDeviceError` | More than one device matches and no disambiguating argument was given. |
+| `StreamUnderrunError` | The host cannot drain the USB buffer fast enough; frames were dropped. |
+| `SyncDriftError` | The hardware sync timestamps between two devices have diverged beyond the configured tolerance. |

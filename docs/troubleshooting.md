@@ -1,66 +1,55 @@
 ---
 eyebrow: Support
-lede: The most common things that go wrong, what they mean, and how to fix them.
+lede: "The most common things that go wrong, what they mean, and how to fix them. Roughly ordered by frequency."
 ---
 
-## Glove not detected (GloveNotFoundError)
+# Troubleshooting
 
-`GloveStream()` raises `GloveNotFoundError`, or `find_glove_port()` returns `None`.
+## Device not detected
 
-- **Cable.** Try a different USB cable. Data-capable cables only — some USB-C cables are power-only.
-- **Port.** Plug directly into the host USB port, not through a hub.
-- **Permissions (Linux).** Your user must be in the `dialout` group: `sudo usermod -aG dialout $USER`, then log out and back in.
-- **Verify detection.** Run `python -c "from digity._serial import find_glove_port; print(find_glove_port())"`.
-- **List all ports.** Run `python -m serial.tools.list_ports -v` to inspect all USB-serial devices.
+`chiros.Device.discover()` returns an empty list, or `chiros.Device.open()` raises `DeviceNotFoundError`.
 
-## Stream opens but no frames arrive
+- **Cable.** Try a different USB-C cable. Some USB-C cables are power-only and carry no data. Use the cable included with the device or one rated for USB 3.0 data.
+- **Port.** Connect directly to a USB port on the host machine. USB hubs — especially unpowered ones — can prevent the device from enumerating correctly.
+- **Permissions (Linux).** The device appears as a USB-serial interface. Your user must have read/write access: copy the udev rules file from the package and reload (`sudo udevadm control --reload-rules && sudo udevadm trigger`), then unplug and replug the device.
+- **WSL2.** USB devices are not automatically passed through to WSL2. Install `usbipd-win` on Windows and attach the device: `usbipd attach --wsl --busid <id>`.
 
-The `for frame in stream:` loop blocks indefinitely without yielding.
+## StreamUnderrunError
 
-- The glove firmware may not be running. Check that the status LED is active.
-- Baud rate mismatch — the SDK opens at 921600 baud. If the firmware was flashed with a different rate, communication is silent.
+The host cannot drain the USB buffer fast enough and frames were dropped.
 
-## Thumb angles move unexpectedly
+- Move any heavy computation out of the main frame loop and into a worker thread or process.
+- If you only need kinematics, open the stream with `device.stream(touch=False, imu=False)` to reduce per-frame work.
+- On a heavily loaded machine, set the streaming thread to a higher OS priority or pin it to an isolated CPU core.
 
-The thumb animation jumps around when you move other fingers or the wrist.
+## SyncDriftError on bimanual
 
-**Cause:** arm-group packets (wrist/forearm sensors) have `finger=0` in their `sens_id`, which looks like thumb data. Fix: always filter by `frame.group == "hand"`.
+Two synchronized devices have drifted beyond the configured tolerance.
 
-```python
-for sensor in frame.sensors:
-    if isinstance(sensor, AnglesSensor):
-        if frame.group == "hand":   # ← always check this
-            handle_angles(sensor)
-```
+- Check that the SYNC cable is fully seated in both 3.5 mm jacks. A loose connection causes intermittent sync loss.
+- The default drift tolerance is 500 µs. If your use case tolerates more, pass `tolerance_us=2000` to `SyncGroup`.
+- Do not run both devices through the same USB hub. Each device should connect directly to the host or to separate powered hubs.
 
-## Dashboard fails to open on Linux
+## NaN in q[mcp_abd]
 
-`digity-viz` crashes with `ModuleNotFoundError: No module named 'gi'`.
+The MCP abduction/adduction channel reads `NaN` for fingers II–V.
 
-- Install system GTK packages: `sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-webkit2-4.1`
-- If using a venv, recreate it with `python3 -m venv .venv --system-site-packages`.
-- On headless servers, the window is skipped automatically — the server still starts and prints the URL.
+This is a known firmware limitation in v0.4. The 6-bar linkage at the MCP joint mechanically couples abduction to flexion; the firmware does not yet separate the two. The channel is reserved and will return valid data in a future firmware release. For now, ignore `q[mcp_abd]` for fingers II–V and use only the flexion channels.
 
-## digity-viz command not found (Windows)
+## Touch column sparsely populated
 
-- Use the Python module fallback: `python -m digity.viz`
-- Or add the Python Scripts folder to PATH: typically `%AppData%\Python\Python3xx\Scripts`.
+`frame.touch` contains many zeros even when the finger is clearly in contact.
 
-## ZMQ remote mode — no frames received
+The touch sensor rate is configurable and defaults to 50 Hz. At high contact forces the ADC can saturate and clip to zero; reduce the excitation voltage in the firmware settings page of the Chiros Viewer. Also check that the digit module is seated flush against the finger — a gap of more than ~2 mm reduces coupling significantly.
 
-`GloveStream(host="192.168.1.10")` blocks without data.
+## External SYNC pulse not landing
 
-- Ensure the remote machine is running `GlovePublisher` or `digity-viz`.
-- The ZMQ PUB socket listens on port 5555. Check firewall rules on both machines.
-- ZMQ PUB/SUB is fire-and-forget — if the publisher started before the subscriber, the first few frames may be missed.
+`device.sync_in.arm()` is called but frames do not show a sync event.
 
-## Frames being dropped
-
-The internal queue holds 2000 entries. If your consumer is slower than the glove packet rate, old frames are dropped silently.
-
-- Move heavy processing out of the `for frame in stream:` loop into a worker thread.
-- If you only need angles, skip `ImuSensor` and `TouchSensor` to reduce per-frame work.
+- Verify the pulse polarity. The default is `"rising"`. If your source generates a falling-edge pulse, pass `polarity="falling"`.
+- The SYNC input expects a 3.3 V logic signal on the tip of the 3.5 mm jack (TRS: tip = signal, ring = ground, sleeve = ground). Check your cable wiring.
+- The minimum pulse width is 10 µs. Pulses shorter than this may not be detected.
 
 ## Still stuck?
 
-Open an issue on [github.com/digity-cristobalcorral/digity-sdk](https://github.com/digity-cristobalcorral/digity-sdk) or email [cristobal.corral@digity.de](mailto:cristobal.corral@digity.de).
+Open an issue on [github.com/digity-de/chiros-sdk](https://github.com/digity-de/chiros-sdk) with the output of `chiros doctor` and a description of what you tried.
