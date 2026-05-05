@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Digity](README.md)
+* [DIGITY](README.md)
 
 ## Getting Started
 
