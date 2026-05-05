@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="{{ 'assets/logo.png' | url }}">
 {% for css in config.extra_css %}
 <link rel="stylesheet" href="{{ css | url }}" />
 {% endfor %}
@@ -18,7 +19,7 @@
   <div class="dnav__inner">
     <div class="dnav__left">
       <a class="dnav__brand" href="{{ base_url }}" aria-label="{{ config.site_name }}">
-        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+        <img src="{{ 'assets/logo.png' | url }}" alt="digity" style="height:22px;display:block;">
       </a>
       <span class="dnav__sep" aria-hidden="true">/</span>
       <a class="dnav__product" href="{{ base_url }}">SDK Docs</a>

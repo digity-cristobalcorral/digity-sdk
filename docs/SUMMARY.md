@@ -6,7 +6,7 @@
 
 * [What is Chiros](what-is-chiros.md)
 * [Hardware overview](hardware-overview.md)
-* [Quickstart](index.md)
+* [Quickstart](quickstart.md)
 * [System requirements](system-requirements.md)
 
 ## SDK
