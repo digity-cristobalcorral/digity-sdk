@@ -46,6 +46,5 @@ The firmware streams three data channels continuously at the rates below. These 
 
 For most research use cases the default Python SDK is sufficient. The SDK's background serial thread keeps the read buffer from overflowing; the main thread processes frames at whatever rate the application can sustain.
 
-{% hint style="info" %}
-For bimanual teleoperation at 100 Hz, latency becomes important. Pin the streaming thread to an isolated CPU core and set the process to `SCHED_FIFO` priority. On Ubuntu, install `linux-lowlatency` for sub-millisecond scheduling jitter. See [Bimanual recording](guide-bimanual.md) for a worked example.
-{% endhint %}
+!!! note
+    For bimanual teleoperation at 100 Hz, latency becomes important. Pin the streaming thread to an isolated CPU core and set the process to `SCHED_FIFO` priority. On Ubuntu, install `linux-lowlatency` for sub-millisecond scheduling jitter. See [Bimanual recording](guide-bimanual.md) for a worked example.

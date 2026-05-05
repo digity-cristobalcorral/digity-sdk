@@ -47,9 +47,8 @@ with device.stream() as frames:
         print(frame.imu)    # dict: {"acc": array, "gyro": array}
 ```
 
-{% hint style="info" %}
-The frame bundles all modalities even though they run at different rates. When a faster stream (IMU at 250 Hz) produces data between kinematics frames (100 Hz), the SDK holds the latest IMU sample and attaches it to the next kinematics frame. This means `frame.imu` is always present but may repeat across consecutive kinematics frames.
-{% endhint %}
+!!! note
+    The frame bundles all modalities even though they run at different rates. When a faster stream (IMU at 250 Hz) produces data between kinematics frames (100 Hz), the SDK holds the latest IMU sample and attaches it to the next kinematics frame. This means `frame.imu` is always present but may repeat across consecutive kinematics frames.
 
 ## 4. Three sync scopes
 

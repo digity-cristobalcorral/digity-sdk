@@ -27,9 +27,8 @@ Chiros solves this with a 6-bar linkage. The proximal segment is not attached di
 
 The linkage is calibrated at the factory for the median hand size. No user adjustment is required. The flex-PCB that spans the linkage carries the angle sensor that reads the MCP flexion angle. A second sensor on the transverse bar reads abduction.
 
-{% hint style="info" %}
-Design note: the 6-bar approach adds two passive links compared to a direct-attach design. This increases part count but eliminates the need for per-user alignment and makes the device size-agnostic within the supported hand range. The tradeoff was validated against direct kinematics in the original research paper (see the Resources page).
-{% endhint %}
+!!! note
+    Design note: the 6-bar approach adds two passive links compared to a direct-attach design. This increases part count but eliminates the need for per-user alignment and makes the device size-agnostic within the supported hand range. The tradeoff was validated against direct kinematics in the original research paper (see the Resources page).
 
 ## Specifications
 
@@ -42,9 +41,8 @@ Design note: the 6-bar approach adds two passive links compared to a direct-atta
 | IMU per finger | 1 (proximal segment) |
 | Total DOFs per finger | 3 flexion + 1 abduction (reserved in v0.4) |
 
-{% hint style="warning" %}
-In SDK v0.4 and firmware v0.4.x, the MCP abduction/adduction channel (`q[mcp_abd]`) returns `NaN` for all fingers II–V. The channel is reserved and will be populated in a future firmware release. Do not use it for analysis or control.
-{% endhint %}
+!!! warning
+    In SDK v0.4 and firmware v0.4.x, the MCP abduction/adduction channel (`q[mcp_abd]`) returns `NaN` for all fingers II–V. The channel is reserved and will be populated in a future firmware release. Do not use it for analysis or control.
 
 ## Where to go next
 

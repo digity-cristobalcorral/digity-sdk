@@ -51,6 +51,5 @@ for frame_l, frame_r in zip(lframes, rframes):
 - **Pin to a CPU core.** On Linux, use `taskset -c 2 python your_script.py` to pin the process to an isolated core and reduce scheduling jitter.
 - **Use `SCHED_FIFO`.** For sub-millisecond end-to-end latency, set the streaming thread to real-time priority: `sudo chrt -f 50 python your_script.py`. Requires `CAP_SYS_NICE`.
 
-{% hint style="info" %}
-Looking ahead: group-scope sync (more than two devices, or Chiros + external trackers) is experimental in SDK 0.4. The `SyncGroup` API accepts more than two devices, but the hardware arbitration protocol is not yet finalized and may change in SDK 0.5. For production bimanual work, stick to two devices with user-scope sync.
-{% endhint %}
+!!! note
+    Looking ahead: group-scope sync (more than two devices, or Chiros + external trackers) is experimental in SDK 0.4. The `SyncGroup` API accepts more than two devices, but the hardware arbitration protocol is not yet finalized and may change in SDK 0.5. For production bimanual work, stick to two devices with user-scope sync.

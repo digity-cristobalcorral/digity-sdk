@@ -25,9 +25,8 @@ Each digit module contains two or three PCB segments that act as rigid phalanges
 
 The PCB segments are sized to fit the 5th–95th percentile adult hand without adjustment. For hands outside that range, replacement segments in two additional sizes are available as accessories.
 
-{% hint style="info" %}
-All segments communicate over a proprietary high-speed bus that runs on the same flex-PCB conductors that carry power. You do not need to configure the bus; the firmware auto-enumerates all segments at boot and reports a fault if any are missing.
-{% endhint %}
+!!! note
+    All segments communicate over a proprietary high-speed bus that runs on the same flex-PCB conductors that carry power. You do not need to configure the bus; the firmware auto-enumerates all segments at boot and reports a fault if any are missing.
 
 ## Tracker mount
 
