@@ -1,5 +1,5 @@
 site_name: Digity SDK
-site_url: https://digity-cristobalcorral.github.io/digity-sdk/
+site_url: https://docs.digity.de/
 repo_url: https://github.com/digity-cristobalcorral/digity-sdk
 repo_name: digity-sdk
 edit_uri: edit/main/docs/
@@ -18,17 +18,20 @@ extra_javascript:
 
 nav:
   - Getting Started:
-    - What is Digity: what-is-digity.md
+    - What is Chiros: what-is-chiros.md
+    - Hardware overview: hardware-overview.md
     - Quickstart: index.md
     - System requirements: system-requirements.md
   - SDK:
     - Core concepts: sdk-core-concepts.md
     - API reference: sdk-api-reference.md
     - Changelog: changelog.md
+  - Hardware Reference:
+    - Finger architecture: finger-architecture.md
+  - Guides:
+    - Bimanual recording: guide-bimanual.md
   - Integrations:
-    - Dashboard (digity-viz): integrations-dashboard.md
     - ROS2: integrations-ros2.md
-    - Rerun viewer: integrations-rerun.md
   - Support:
     - Troubleshooting: troubleshooting.md
 
