@@ -32,6 +32,44 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
   });
 });
 
+// Page actions dropdown
+(function () {
+  const btn = document.getElementById('pageActionsBtn');
+  const menu = document.getElementById('pageActionsMenu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = !menu.hidden;
+    menu.hidden = open;
+    btn.setAttribute('aria-expanded', String(!open));
+  });
+
+  document.addEventListener('click', () => {
+    menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  });
+
+  // Copy page as Markdown
+  const copyBtn = document.getElementById('copyMarkdownBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const src = copyBtn.dataset.src;
+      const url = 'https://raw.githubusercontent.com/digity-cristobalcorral/digity-sdk/main/docs/' + src;
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        await navigator.clipboard.writeText(text);
+        const strong = copyBtn.querySelector('strong');
+        strong.textContent = 'Copied!';
+        setTimeout(() => strong.textContent = 'Copy page', 1500);
+      } catch {
+        alert('Could not copy — open the GitHub link to copy manually.');
+      }
+    });
+  }
+})();
+
 // Inject copy buttons on all MkDocs fenced code blocks
 document.querySelectorAll('.docs__main pre').forEach(pre => {
   const wrap = document.createElement('div');
