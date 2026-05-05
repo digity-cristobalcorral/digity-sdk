@@ -12,7 +12,13 @@ Chiros is a wearable scientific instrument. It captures the angles of every fing
 
 It is designed to be worn by a human operator during dexterous manipulation tasks. The resulting dataset encodes not just what the hand did, but how it felt: which surfaces were contacted, how hard, and in what sequence. Test Merge
 
+```
+Some code block
+```
+
 ## Who it is for
+
+
 
 Chiros is built around three priorities:
 
