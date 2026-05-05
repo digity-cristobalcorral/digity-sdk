@@ -57,6 +57,10 @@ digity-viz --browser                    # open in system browser
 digity-viz --port /dev/ttyUSB0          # explicit serial port
 python -m digity.viz                    # fallback when CLI is not on PATH
 
+# Start the dashboard from Python (equivalent to digity-viz --browser)
+from digity.viz import start
+start(port="/dev/ttyUSB0", browser=True)
+
 # Stream glove to a remote dashboard
 digity-viz --agent --token TOKEN
 digity-agent --token TOKEN --url https://app.digity.de/chiros
@@ -94,8 +98,8 @@ digity-sdk/
 │           ├── __main__.py     — python -m digity.viz support
 │           ├── _server.py      — Flask + SocketIO dashboard server
 │           ├── _agent.py       — agent relay client (streams local glove to remote server)
-│           ├── templates/      — Jinja2 HTML templates (viewer, record, setup, users, login)
-│           └── static/         — JS (Three.js, socket.io), GLB models, images
+│           ├── templates/      — Jinja2 HTML templates (viewer, multiview, record, setup, users, login)
+│           └── static/         — JS (Three.js, socket.io, hand builders), GLB models, images
 └── examples/
     └── basic.py                — plug in glove, run this, see live data
 ```
@@ -234,6 +238,17 @@ The dashboard is a **Flask + Flask-SocketIO** app that auto-starts when `digity-
 **Agent relay** — `_agent.py` connects to a remote server via Socket.IO `/agent` namespace, streams frames as JSON. The server-side counterpart is in `_server.py` (`/agent` namespace handlers) which re-emits frames to the browser room.
 
 **Authentication** — locally the server auto-logs in the first user; no password prompt. The agent relay authenticates via token (stored in `agent_tokens` table, obtainable from the Setup page).
+
+**Multiview page** (`/chiros/multiview`) — side-by-side view of up to 200 hand model instances. Supports a `?model=<name>&copies=<n>` query string. Available models: `ultraleap`, `shadow`, `allegro`, `inspire`, `ability`, `schunk`.
+
+**3D hand builder JS pattern** — each `static/js/<name>_hand.js` exports one async function:
+```js
+async function buildXxxHand(loader, isRight) → { root, setJoint, dispose }
+// root: THREE.Object3D to add to scene
+// setJoint(name, radians): animate a named joint
+// dispose(): free GPU resources
+```
+All hand builders load per-link GLB files from `static/models/<name>_hand/`. To add a new hand, follow this same pattern and add a corresponding model directory.
 
 ---
 

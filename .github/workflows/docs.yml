@@ -1,0 +1,37 @@
+name: Deploy docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "theme/**"
+      - "mkdocs.yml"
+      - "pyproject.toml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MkDocs
+        run: pip install mkdocs
+
+      - name: Check SDK version in changelog
+        run: |
+          SDK_VER=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "SDK version: $SDK_VER"
+          if ! grep -q "$SDK_VER" docs/changelog.md; then
+            echo "::warning::SDK $SDK_VER not found in changelog.md — remember to update it!"
+          fi
+
+      - name: Build and deploy
+        run: mkdocs gh-deploy --force

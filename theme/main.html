@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{% if page.title %}{{ page.title }} — {% endif %}{{ config.site_name }} Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+{% for css in config.extra_css %}
+<link rel="stylesheet" href="{{ base_url }}{{ css }}" />
+{% endfor %}
+</head>
+<body data-page="docs">
+
+<!-- TOP BAR -->
+<header class="dnav">
+  <div class="dnav__inner">
+    <div class="dnav__left">
+      <a class="dnav__brand" href="{{ base_url }}" aria-label="{{ config.site_name }}">
+        <span style="font-family:var(--font);font-weight:800;font-size:17px;color:var(--text);letter-spacing:-0.02em">digity</span>
+      </a>
+      <span class="dnav__sep" aria-hidden="true">/</span>
+      <a class="dnav__product" href="{{ base_url }}">SDK Docs</a>
+    </div>
+    <div class="dnav__right">
+      <a href="{{ config.repo_url }}" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
+      <button class="dnav__burger" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="dnav__rule"></div>
+</header>
+
+<div class="docs">
+
+  <!-- SIDEBAR -->
+  <aside class="docs__side" aria-label="Documentation navigation">
+    <nav class="dtree">
+      {% for section in nav %}
+        {% if section.children %}
+        <div class="dtree__group">
+          <div class="dtree__h">{{ section.title }}</div>
+          {% for item in section.children %}
+            {% if item.children %}
+              <details{% if item.active %} open{% endif %}>
+                <summary>{{ item.title }}</summary>
+                {% for child in item.children %}
+                  <a href="{{ child.url }}"{% if child.active %} class="is-active" aria-current="page"{% endif %}>{{ child.title }}</a>
+                {% endfor %}
+              </details>
+            {% else %}
+              <a href="{{ item.url }}"{% if item.active %} class="is-active" aria-current="page"{% endif %}>{{ item.title }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+      <div class="dtree__foot">
+        <a href="{{ config.repo_url }}" class="dtree__foot-link" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="docs__main">
+    <header class="docs__head">
+      {% if page.meta and page.meta.eyebrow %}
+      <div class="docs__eyebrow"><span class="dot"></span>{{ page.meta.eyebrow }}</div>
+      {% endif %}
+      <h1 class="docs__title">{{ page.title }}</h1>
+      {% if page.meta and page.meta.lede %}
+      <p class="docs__lede">{{ page.meta.lede }}</p>
+      {% endif %}
+    </header>
+
+    {{ page.content }}
+
+    {% if page.next_page or page.previous_page %}
+    <footer class="docs__pagefoot">
+      <div class="docs__pager">
+        {% if page.previous_page %}
+        <a href="{{ page.previous_page.url }}" class="docs__pager-prev">
+          <span class="mono">← Previous</span>
+          <span>{{ page.previous_page.title }}</span>
+        </a>
+        {% else %}<div></div>{% endif %}
+        {% if page.next_page %}
+        <a href="{{ page.next_page.url }}" class="docs__pager-next">
+          <span class="mono">Next →</span>
+          <span>{{ page.next_page.title }}</span>
+        </a>
+        {% endif %}
+      </div>
+      <div class="docs__editline mono">
+        <span>{{ config.site_name }}</span>
+        <span><a href="{{ config.repo_url }}" target="_blank" rel="noopener">View on GitHub</a></span>
+      </div>
+    </footer>
+    {% endif %}
+  </main>
+
+  <!-- RIGHT TOC -->
+  {% if page.toc %}
+  <aside class="docs__toc" aria-label="On this page">
+    <div class="dtoc">
+      <div class="dtoc__h mono">On this page</div>
+      {% for item in page.toc %}
+        <a href="#{{ item.id }}">{{ item.title }}</a>
+        {% for child in item.children %}
+          <a href="#{{ child.id }}" style="padding-left:20px;font-size:12px;">{{ child.title }}</a>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </aside>
+  {% endif %}
+
+</div>
+
+{% for js in config.extra_javascript %}
+<script src="{{ base_url }}{{ js }}"></script>
+{% endfor %}
+
+<script>
+// Mobile burger
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) burger.addEventListener('click', () => side.classList.toggle('is-open'));
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+// Copy buttons
+document.querySelectorAll('.codeblock__copy').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const block = btn.closest('.codeblock');
+    const pre = block && block.querySelector('pre code');
+    if (!pre) return;
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const label = btn.querySelector('span');
+      const original = label ? label.textContent : 'Copy';
+      btn.classList.add('is-copied');
+      if (label) label.textContent = 'Copied';
+      setTimeout(() => {
+        btn.classList.remove('is-copied');
+        if (label) label.textContent = original;
+      }, 1400);
+    });
+  });
+});
+
+// Tab toggles inside codeblock bars (purely visual â actual content swap is out of scope)
+document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
+  tabs.querySelectorAll('.codeblock__tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.querySelectorAll('.codeblock__tab').forEach(t => {
+        t.classList.remove('is-on');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('is-on');
+      tab.setAttribute('aria-selected', 'true');
+    });
+  });
+});
+
+// TOC scroll-spy
+(function () {
+  const links = [...document.querySelectorAll('.dtoc a[href^="#"]')];
+  if (!links.length) return;
+  const map = new Map();
+  links.forEach(a => {
+    const id = a.getAttribute('href').slice(1);
+    const target = document.getElementById(id);
+    if (target) map.set(target, a);
+  });
+  if (!map.size) return;
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('is-active'));
+        const a = map.get(entry.target);
+        if (a) a.classList.add('is-active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+  map.forEach((_, el) => io.observe(el));
+})();
+
+// Mobile burger toggles the sidebar (very simple)
+const burger = document.querySelector('.dnav__burger');
+const side = document.querySelector('.docs__side');
+if (burger && side) {
+  burger.addEventListener('click', () => {
+    side.classList.toggle('is-open');
+  });
+}

@@ -730,7 +730,7 @@ def run(port=None, desktop=True):
     t.start()
 
     def _run_flask():
-        socketio.run(app, host="127.0.0.1", port=5001, debug=False,
+        socketio.run(app, host="0.0.0.0", port=5001, debug=False,
                      allow_unsafe_werkzeug=True)
 
     flask_thread = threading.Thread(target=_run_flask, daemon=True)

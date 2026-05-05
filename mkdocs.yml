@@ -1,0 +1,41 @@
+site_name: Digity SDK
+site_url: https://digity-cristobalcorral.github.io/digity-sdk/
+repo_url: https://github.com/digity-cristobalcorral/digity-sdk
+repo_name: digity-sdk
+docs_dir: docs
+
+theme:
+  name: null
+  custom_dir: theme
+
+extra_css:
+  - assets/site.css
+  - assets/docs.css
+
+extra_javascript:
+  - assets/docs.js
+
+nav:
+  - Getting Started:
+    - What is Digity: what-is-digity.md
+    - Quickstart: index.md
+    - System requirements: system-requirements.md
+  - SDK:
+    - Core concepts: sdk-core-concepts.md
+    - API reference: sdk-api-reference.md
+    - Changelog: changelog.md
+  - Integrations:
+    - Dashboard (digity-viz): integrations-dashboard.md
+    - ROS2: integrations-ros2.md
+    - Rerun viewer: integrations-rerun.md
+  - Support:
+    - Troubleshooting: troubleshooting.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - fenced_code

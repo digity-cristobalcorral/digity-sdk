@@ -1,0 +1,62 @@
+/* assets/site.css — Digity base theme, shared across all doc pages */
+
+/* ---------- RESET ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+img, svg { display: block; max-width: 100%; }
+button { cursor: pointer; }
+a { text-decoration: none; }
+
+/* ---------- DESIGN TOKENS (dark theme) ---------- */
+:root {
+  --bg:            #08090c;
+  --surface:       #0e1117;
+  --border:        #1e2229;
+  --border-strong: #2d3340;
+
+  --text:   #e8ecf0;
+  --text-2: #8e96a1;
+  --text-3: #555d6a;
+
+  --accent: #7cb5e8;
+
+  --font: 'Manrope', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+/* ---------- BASE ---------- */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: inherit; }
+
+h1,h2,h3,h4,h5,h6 {
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+code, pre, .mono {
+  font-family: var(--mono);
+}
+
+/* ---------- UTILITIES ---------- */
+.mono  { font-family: var(--mono); }
+.muted { color: var(--text-3); }
+.small { font-size: 13.5px; }
+
+::selection {
+  background: rgba(124, 181, 232, 0.25);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
