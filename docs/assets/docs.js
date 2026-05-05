@@ -32,6 +32,31 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
   });
 });
 
+// Inject copy buttons on all MkDocs fenced code blocks
+document.querySelectorAll('.docs__main pre').forEach(pre => {
+  const wrap = document.createElement('div');
+  wrap.className = 'code-wrap';
+  pre.parentNode.insertBefore(wrap, pre);
+  wrap.appendChild(pre);
+
+  const btn = document.createElement('button');
+  btn.className = 'code-copy';
+  btn.textContent = 'Copy';
+  wrap.appendChild(btn);
+
+  btn.addEventListener('click', () => {
+    const code = pre.querySelector('code');
+    navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+      btn.textContent = 'Copied';
+      btn.classList.add('is-copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('is-copied');
+      }, 1400);
+    });
+  });
+});
+
 // TOC scroll-spy
 (function () {
   const links = [...document.querySelectorAll('.dtoc a[href^="#"]')];
