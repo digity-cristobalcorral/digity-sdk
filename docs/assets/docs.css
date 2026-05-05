@@ -886,7 +886,7 @@ body[data-page="docs"] {
 /* ---------- PAGE HEADER ---------- */
 /* MkDocs renders h1 inside page.content — we suppress it
    because the template already renders it in docs__head. */
-.docs__main > h1:first-child { display: none; }
+.docs__main > h1:first-of-type { display: none; }
 
 /* ---------- BODY TYPOGRAPHY ---------- */
 .docs__main h2 {
