@@ -32,6 +32,77 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
   });
 });
 
+// Search
+(function () {
+  const overlay = document.getElementById('searchOverlay');
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  const openBtn = document.getElementById('searchBtn');
+  if (!overlay || !input || !results) return;
+
+  let index = null;
+
+  async function loadIndex() {
+    if (index) return index;
+    const base = document.body.dataset.base || '/';
+    const res = await fetch(base + 'search/search_index.json');
+    const data = await res.json();
+    index = data.docs || [];
+    return index;
+  }
+
+  function highlight(text, query) {
+    return text.replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+      m => '<mark>' + m + '</mark>');
+  }
+
+  function getSnippet(text, query) {
+    const i = text.toLowerCase().indexOf(query.toLowerCase());
+    if (i === -1) return text.slice(0, 120) + '…';
+    const start = Math.max(0, i - 50);
+    const end = Math.min(text.length, i + query.length + 100);
+    return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+  }
+
+  function doSearch(query) {
+    if (!index || query.length < 2) { results.innerHTML = ''; return; }
+    const q = query.toLowerCase();
+    const matches = index.filter(d =>
+      d.title.toLowerCase().includes(q) || d.text.toLowerCase().includes(q)
+    ).slice(0, 8);
+
+    if (!matches.length) {
+      results.innerHTML = '<div class="search-empty">No results for "' + query + '"</div>';
+      return;
+    }
+
+    const base = document.body.dataset.base || '/';
+    results.innerHTML = matches.map(d => `
+      <a class="search-result" href="${base}${d.location}">
+        <div class="search-result__title">${highlight(d.title, query)}</div>
+        <div class="search-result__snippet">${highlight(getSnippet(d.text, query), query)}</div>
+      </a>`).join('');
+  }
+
+  function open() {
+    overlay.hidden = false;
+    input.value = '';
+    results.innerHTML = '';
+    setTimeout(() => input.focus(), 30);
+    loadIndex();
+  }
+
+  function close() { overlay.hidden = true; }
+
+  openBtn.addEventListener('click', open);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  input.addEventListener('input', () => doSearch(input.value.trim()));
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); open(); }
+    if (e.key === 'Escape') close();
+  });
+})();
+
 // Page actions dropdown
 (function () {
   const btn = document.getElementById('pageActionsBtn');

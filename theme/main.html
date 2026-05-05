@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="{{ css | url }}" />
 {% endfor %}
 </head>
-<body data-page="docs">
+<body data-page="docs" data-base="{{ base_url }}">
 
 <!-- TOP BAR -->
 <header class="dnav">
@@ -23,6 +23,13 @@
       </a>
       <span class="dnav__sep" aria-hidden="true">/</span>
       <a class="dnav__product" href="{{ base_url }}">SDK Docs</a>
+    </div>
+    <div class="dnav__center">
+      <button class="dnav__search" id="searchBtn" aria-label="Search">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span>Search...</span>
+        <kbd>Ctrl K</kbd>
+      </button>
     </div>
     <div class="dnav__right">
       <a href="{{ config.repo_url }}" class="dnav__link" target="_blank" rel="noopener">GitHub ↗</a>
@@ -142,6 +149,18 @@
   </aside>
   {% endif %}
 
+</div>
+
+<!-- SEARCH MODAL -->
+<div class="search-overlay" id="searchOverlay" hidden>
+  <div class="search-modal">
+    <div class="search-input-wrap">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="search" id="searchInput" placeholder="Search docs..." autocomplete="off" spellcheck="false">
+      <kbd>Esc</kbd>
+    </div>
+    <div id="searchResults" class="search-results"></div>
+  </div>
 </div>
 
 {% for js in config.extra_javascript %}
