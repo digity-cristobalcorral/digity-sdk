@@ -134,6 +134,10 @@ body[data-page="docs"] {
 
 .docs__side, .docs__toc {
   align-self: start;
+  position: sticky;
+  top: var(--top-h);
+  height: calc(100vh - var(--top-h));
+  overflow-y: auto;
 }
 
 .docs__side {
