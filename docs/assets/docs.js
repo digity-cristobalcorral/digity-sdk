@@ -43,8 +43,8 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
   async function loadIndex() {
     if (index) return;
     try {
-      const base = document.body.dataset.base || '/';
-      const res = await fetch(base + 'search/search_index.json', { credentials: 'include' });
+      const base = (document.body.dataset.base || '.').replace(/\/?$/, '/');
+      const res = await fetch(base + 'search/search_index.json');
       const data = await res.json();
       index = (data.docs || []).filter(d => d.title && d.text);
     } catch (e) { index = []; }
@@ -81,7 +81,7 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
     if (!matches.length) {
       dropdown.innerHTML = '<div class="search-empty">No results for "' + esc(q) + '"</div>';
     } else {
-      const base = document.body.dataset.base || '/';
+      const base = (document.body.dataset.base || '.').replace(/\/?$/, '/');
       dropdown.innerHTML = matches.map(d => `
         <a class="search-result" href="${base}${d.location}">
           <div class="search-result__section">${esc(sectionFromLocation(d.location))}</div>
