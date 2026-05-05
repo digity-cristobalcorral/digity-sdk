@@ -30,6 +30,9 @@ jobs:
       - name: Sync nav from SUMMARY.md
         run: python3 scripts/sync_nav.py
 
+      - name: Remove GitBook-only files from docs build
+        run: rm -f docs/SUMMARY.md docs/CNAME
+
       - name: Check SDK version in changelog
         run: |
           SDK_VER=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
