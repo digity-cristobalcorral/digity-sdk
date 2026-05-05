@@ -34,72 +34,72 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
 
 // Search
 (function () {
-  const overlay = document.getElementById('searchOverlay');
   const input = document.getElementById('searchInput');
-  const results = document.getElementById('searchResults');
-  const openBtn = document.getElementById('searchBtn');
-  if (!overlay || !input || !results) return;
+  const dropdown = document.getElementById('searchDropdown');
+  if (!input || !dropdown) return;
 
   let index = null;
 
   async function loadIndex() {
-    if (index) return index;
-    const base = document.body.dataset.base || '/';
-    const res = await fetch(base + 'search/search_index.json');
-    const data = await res.json();
-    index = data.docs || [];
-    return index;
+    if (index) return;
+    try {
+      const base = document.body.dataset.base || '/';
+      const res = await fetch(base + 'search/search_index.json');
+      const data = await res.json();
+      index = (data.docs || []).filter(d => d.title && d.text);
+    } catch (e) { index = []; }
   }
 
-  function highlight(text, query) {
-    return text.replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+  function esc(s) { return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  function highlight(text, q) {
+    return esc(text).replace(new RegExp(esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
       m => '<mark>' + m + '</mark>');
   }
 
-  function getSnippet(text, query) {
-    const i = text.toLowerCase().indexOf(query.toLowerCase());
-    if (i === -1) return text.slice(0, 120) + '…';
-    const start = Math.max(0, i - 50);
-    const end = Math.min(text.length, i + query.length + 100);
-    return (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+  function snippet(text, q) {
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i === -1) return text.slice(0, 110) + '…';
+    const s = Math.max(0, i - 40), e = Math.min(text.length, i + q.length + 90);
+    return (s > 0 ? '…' : '') + text.slice(s, e) + (e < text.length ? '…' : '');
   }
 
-  function doSearch(query) {
-    if (!index || query.length < 2) { results.innerHTML = ''; return; }
-    const q = query.toLowerCase();
+  function sectionFromLocation(loc) {
+    const parts = loc.replace(/\/$/, '').split('/');
+    if (parts.length >= 2) return parts[parts.length - 2];
+    return 'Docs';
+  }
+
+  function render(query) {
+    const q = query.trim();
+    if (q.length < 2) { dropdown.hidden = true; return; }
     const matches = index.filter(d =>
-      d.title.toLowerCase().includes(q) || d.text.toLowerCase().includes(q)
-    ).slice(0, 8);
+      d.title.toLowerCase().includes(q.toLowerCase()) ||
+      d.text.toLowerCase().includes(q.toLowerCase())
+    ).slice(0, 7);
 
     if (!matches.length) {
-      results.innerHTML = '<div class="search-empty">No results for "' + query + '"</div>';
-      return;
+      dropdown.innerHTML = '<div class="search-empty">No results for "' + esc(q) + '"</div>';
+    } else {
+      const base = document.body.dataset.base || '/';
+      dropdown.innerHTML = matches.map(d => `
+        <a class="search-result" href="${base}${d.location}">
+          <div class="search-result__section">${esc(sectionFromLocation(d.location))}</div>
+          <div class="search-result__title">${highlight(d.title, q)}</div>
+          <div class="search-result__snippet">${highlight(snippet(d.text, q), q)}</div>
+        </a>`).join('');
     }
-
-    const base = document.body.dataset.base || '/';
-    results.innerHTML = matches.map(d => `
-      <a class="search-result" href="${base}${d.location}">
-        <div class="search-result__title">${highlight(d.title, query)}</div>
-        <div class="search-result__snippet">${highlight(getSnippet(d.text, query), query)}</div>
-      </a>`).join('');
+    dropdown.hidden = false;
   }
 
-  function open() {
-    overlay.hidden = false;
-    input.value = '';
-    results.innerHTML = '';
-    setTimeout(() => input.focus(), 30);
-    loadIndex();
-  }
-
-  function close() { overlay.hidden = true; }
-
-  openBtn.addEventListener('click', open);
-  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-  input.addEventListener('input', () => doSearch(input.value.trim()));
+  input.addEventListener('focus', loadIndex);
+  input.addEventListener('input', () => render(input.value));
+  document.addEventListener('click', e => {
+    if (!input.closest('.dnav__search').contains(e.target)) dropdown.hidden = true;
+  });
   document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); open(); }
-    if (e.key === 'Escape') close();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); input.focus(); input.select(); }
+    if (e.key === 'Escape') { dropdown.hidden = true; input.blur(); }
   });
 })();
 
