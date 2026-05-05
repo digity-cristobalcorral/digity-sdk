@@ -44,7 +44,7 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
     if (index) return;
     try {
       const base = document.body.dataset.base || '/';
-      const res = await fetch(base + 'search/search_index.json');
+      const res = await fetch(base + 'search/search_index.json', { credentials: 'include' });
       const data = await res.json();
       index = (data.docs || []).filter(d => d.title && d.text);
     } catch (e) { index = []; }
