@@ -32,6 +32,7 @@ nav:
     - Bimanual recording: guide-bimanual.md
   - Integrations:
     - ROS2: integrations-ros2.md
+    - Unity: integrations/unity.md
   - Support:
     - Troubleshooting: troubleshooting.md
 
