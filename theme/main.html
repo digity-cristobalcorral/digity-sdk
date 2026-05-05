@@ -45,11 +45,11 @@
               <details{% if item.active %} open{% endif %}>
                 <summary>{{ item.title }}</summary>
                 {% for child in item.children %}
-                  <a href="{{ child.url }}"{% if child.active %} class="is-active" aria-current="page"{% endif %}>{{ child.title }}</a>
+                  <a href="{{ child.url | url }}"{% if child.active %} class="is-active" aria-current="page"{% endif %}>{{ child.title }}</a>
                 {% endfor %}
               </details>
             {% else %}
-              <a href="{{ item.url }}"{% if item.active %} class="is-active" aria-current="page"{% endif %}>{{ item.title }}</a>
+              <a href="{{ item.url | url }}"{% if item.active %} class="is-active" aria-current="page"{% endif %}>{{ item.title }}</a>
             {% endif %}
           {% endfor %}
         </div>
@@ -79,13 +79,13 @@
     <footer class="docs__pagefoot">
       <div class="docs__pager">
         {% if page.previous_page %}
-        <a href="{{ page.previous_page.url }}" class="docs__pager-prev">
+        <a href="{{ page.previous_page.url | url }}" class="docs__pager-prev">
           <span class="mono">← Previous</span>
           <span>{{ page.previous_page.title }}</span>
         </a>
         {% else %}<div></div>{% endif %}
         {% if page.next_page %}
-        <a href="{{ page.next_page.url }}" class="docs__pager-next">
+        <a href="{{ page.next_page.url | url }}" class="docs__pager-next">
           <span class="mono">Next →</span>
           <span>{{ page.next_page.title }}</span>
         </a>
