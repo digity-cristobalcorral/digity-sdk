@@ -25,6 +25,7 @@
 
 ## Integrations
 
+* [Unity](integrations/unity.md)
 * [ROS2](integrations-ros2.md)
 
 ## Support
