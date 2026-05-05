@@ -10,7 +10,7 @@
 
 * [Core concepts](sdk-core-concepts.md)
 * [API reference](sdk-api-reference.md)
-* [Changelog!](changelog.md)
+* [Changelog](changelog.md)
 
 ## Integrations
 
