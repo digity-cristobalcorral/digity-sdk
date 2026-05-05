@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 {% for css in config.extra_css %}
-<link rel="stylesheet" href="{{ base_url }}{{ css }}" />
+<link rel="stylesheet" href="{{ css | url }}" />
 {% endfor %}
 </head>
 <body data-page="docs">
@@ -117,7 +117,7 @@
 </div>
 
 {% for js in config.extra_javascript %}
-<script src="{{ base_url }}{{ js }}"></script>
+<script src="{{ js | url }}"></script>
 {% endfor %}
 
 <script>
