@@ -10,11 +10,7 @@ lede: >-
 
 Chiros is a wearable scientific instrument. It captures the angles of every finger joint, the contact forces distributed across the fingertips and palm, and the inertial state of the wrist — all synchronized to a single host clock — and streams that data to a host computer over a single USB-C cable.
 
-It is designed to be worn by a human operator during dexterous manipulation tasks. The resulting dataset encodes not just what the hand did, but how it felt: which surfaces were contacted, how hard, and in what sequence. Test Merge
-
-```
-Some code block
-```
+It is designed to be worn by a human operator during dexterous manipulation tasks. The resulting dataset encodes not just what the hand did, but how it felt: which surfaces were contacted, how hard, and in what sequence.&#x20;
 
 ## Who it is for
 
@@ -42,5 +38,5 @@ Firmware and SDK are under active development. The changelog tracks every breaki
 ## Where to go next
 
 * [Hardware overview](hardware-overview.md) — what each physical part does.
-* [Quickstart](index.md) — install the SDK and open a live data stream.
+* [Quickstart](quickstart.md) — install the SDK and open a live data stream.
 * [SDK core concepts](sdk-core-concepts.md) — the five ideas that explain the API.
