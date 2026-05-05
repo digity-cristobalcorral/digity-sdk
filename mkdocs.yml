@@ -2,6 +2,7 @@ site_name: Digity SDK
 site_url: https://digity-cristobalcorral.github.io/digity-sdk/
 repo_url: https://github.com/digity-cristobalcorral/digity-sdk
 repo_name: digity-sdk
+edit_uri: edit/main/docs/
 docs_dir: docs
 
 theme:
