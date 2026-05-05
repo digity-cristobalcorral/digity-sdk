@@ -14,6 +14,12 @@ It is designed to be worn by a human operator during dexterous manipulation task
 
 ## Who it is for
 
+|   |   |   |
+| - | - | - |
+|   |   |   |
+|   |   |   |
+|   |   |   |
+
 
 
 Chiros is built around three priorities:
