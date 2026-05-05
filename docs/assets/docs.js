@@ -55,7 +55,7 @@ document.querySelectorAll('.codeblock__tabs').forEach(tabs => {
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
       const src = copyBtn.dataset.src;
-      const url = 'https://raw.githubusercontent.com/digity-cristobalcorral/digity-sdk/main/docs/' + src;
+      const url = 'https://raw.githubusercontent.com/digity-cristobalcorral/digity-sdk/refs/heads/main/docs/' + src;
       try {
         const res = await fetch(url);
         const text = await res.text();
